@@ -1,0 +1,15 @@
+plugins {
+    id "com.google.protobuf" version "0.8.12"
+    id 'java'
+}
+
+group 'com.futurewei.etcd.proto'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.12.2'
+}
