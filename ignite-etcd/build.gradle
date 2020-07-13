@@ -1,6 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '2.2.2.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'application'
     id 'java'
 }
 
@@ -11,24 +10,20 @@ repositories {
     mavenCentral()
 }
 
-def igniteVer = '2.8.1'
+def grpcVersion = '1.30.1'
 
 dependencies {
     implementation project(':etcd-proto')
 
-    implementation group: 'javax.cache', name: 'cache-api', version: '1.0.0'
-    implementation group: 'org.apache.geronimo', name: 'geronimo-jcache-simple', version: '1.0.4'
-    //implementation group: 'org.apache.ignite', name: 'ignite-core', version: igniteVer
+    implementation 'org.apache.ignite:ignite-core:2.8.1'
 
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.2.RELEASE'
-    runtime group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.12.2'
+    implementation 'commons-cli:commons-cli:1.4'
 
-    testImplementation  group: 'junit', name: 'junit', version: '4.12'
-    //testRuntime group: 'org.apache.ignite', name: 'ignite-spring', version: igniteVer
+    implementation "io.grpc:grpc-services:${grpcVersion}"
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
+    testImplementation 'junit:junit:4.12'
 }
 
-bootRun {
-    if (project.hasProperty('args')) {
-        args project.args.split(',')
-    }
-}
+applicationName = 'ignite-etcd'
+mainClassName = 'com.futurewei.ignite.etcd.grpc.Cmd'

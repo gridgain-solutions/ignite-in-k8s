@@ -2,7 +2,12 @@ package com.futurewei.ignite.etcd;
 
 import com.google.protobuf.ByteString;
 
-final class Key {
+import java.io.Serializable;
+
+// TODO: protobuf-agnostic
+final class Key implements Serializable {
+    private static final long serialVersionUID = 0L;
+
     private final ByteString data;
     private final long ver;
 
