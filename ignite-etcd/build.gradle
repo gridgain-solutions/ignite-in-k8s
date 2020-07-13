@@ -15,9 +15,20 @@ def igniteVer = '2.8.1'
 
 dependencies {
     implementation project(':etcd-proto')
-    implementation group: 'org.apache.ignite', name: 'ignite-core', version: igniteVer
+
+    implementation group: 'javax.cache', name: 'cache-api', version: '1.0.0'
+    implementation group: 'org.apache.geronimo', name: 'geronimo-jcache-simple', version: '1.0.4'
+    //implementation group: 'org.apache.ignite', name: 'ignite-core', version: igniteVer
+
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.2.RELEASE'
+    runtime group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.12.2'
 
     testImplementation  group: 'junit', name: 'junit', version: '4.12'
-    testRuntime group: 'org.apache.ignite', name: 'ignite-spring', version: igniteVer
+    //testRuntime group: 'org.apache.ignite', name: 'ignite-spring', version: igniteVer
+}
+
+bootRun {
+    if (project.hasProperty('args')) {
+        args project.args.split(',')
+    }
 }

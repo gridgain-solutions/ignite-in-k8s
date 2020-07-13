@@ -7,4 +7,4 @@ Self-hosted web server exposing with embedded Ignite server node
 `gradle bootJar`
 
 ## Run
-`java -jar build/libs/ignite-etcd-1.0-SNAPSHOT.jar --server.port=2397`
+`java -jar build/libs/ignite-etcd-1.0-SNAPSHOT.jar --server.port=2379`

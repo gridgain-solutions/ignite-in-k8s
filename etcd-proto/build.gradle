@@ -1,6 +1,6 @@
 plugins {
     id "com.google.protobuf" version "0.8.12"
-    id 'java'
+    id 'java-library'
 }
 
 group 'com.futurewei.etcd.proto'
@@ -11,5 +11,5 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.12.2'
+    api group: 'com.google.protobuf', name: 'protobuf-java', version: '3.12.2'
 }
