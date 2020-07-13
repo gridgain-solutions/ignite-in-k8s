@@ -1,0 +1,3 @@
+rootProject.name = 'ignite-in-k8s'
+
+include 'etcd-proto', 'ignite-etcd'
