@@ -3,17 +3,20 @@ package com.futurewei.ignite.etcd;
 import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
 import mvccpb.Kv;
+import org.apache.ignite.Ignite;
 
 import javax.cache.Cache;
-import javax.cache.Caching;
-import javax.cache.configuration.MutableConfiguration;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
-// TODO: protobuf-agnostic
 public final class KV {
-    private Cache<Key, Value> store = Caching
-            .getCachingProvider()
-            .getCacheManager()
-            .createCache("etcd", new MutableConfiguration<>());
+    private final Cache<Key, Value> cache;
+
+    public KV(Ignite ignite, String cacheName) {
+        cache = ignite.getOrCreateCache(cacheName);
+    }
 
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
         Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(Context.revision()));
@@ -22,7 +25,7 @@ public final class KV {
         if (reqKey != null && reqKey.size() > 0) {
             // TODO: versioning
             Key k = new Key(req.getKey(), 1);
-            Value v = store.get(k);
+            Value v = cache.get(k);
 
             if (v != null) {
                 Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
@@ -47,15 +50,16 @@ public final class KV {
         if (reqKey != null && reqKey.size() > 0 && reqVal != null && reqVal.size() > 0) {
             rev = Context.incrementRevision();
 
-            // TODO: versioning, atomicity
+            // TODO: versioning
+            // TODO: atomicity
             Key k = new Key(reqKey, 1);
-            Value curVal = store.get(k);
+            Value curVal = cache.get(k);
 
             Value v = curVal == null
                     ? new Value(reqVal, rev, rev)
                     : new Value(reqVal, curVal.createRevision(), rev);
 
-            store.put(k, v);
+            cache.put(k, v);
         }
         else
             rev = Context.revision();
@@ -74,7 +78,7 @@ public final class KV {
             // TODO: versioning
             Key k = new Key(reqKey, 1);
 
-            if (store.remove(k))
+            if (cache.remove(k))
                 cnt++;
         }
         else
@@ -84,10 +88,183 @@ public final class KV {
     }
 
     public Rpc.TxnResponse txn(Rpc.TxnRequest req) {
-        return Rpc.TxnResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();
+        List<Rpc.Compare> cmpReqList = req.getCompareList();
+        Collection<Rpc.ResponseOp> resList = null;
+        boolean ok = false;
+
+        if (cmpReqList.size() > 0) {
+            // TODO: atomicity
+            ok = cmpReqList.stream().allMatch(this::check);
+
+            List<Rpc.RequestOp> reqList = ok ? req.getSuccessList() : req.getFailureList();
+
+            resList = reqList.stream().map(this::exec).collect(Collectors.toList());
+        }
+
+        Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
+                .setHeader(Context.getHeader(Context.revision()))
+                .setSucceeded(ok);
+
+        if (resList != null)
+            res.addAllResponses(resList);
+
+        return res.build();
     }
 
     public Rpc.CompactionResponse compact(Rpc.CompactionRequest req) {
         return Rpc.CompactionResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();
+    }
+
+    private static int compare(byte[] lhs, byte[] rhs) {
+        if (lhs == rhs)
+            return 0;
+
+        if (lhs.length != rhs.length)
+            return lhs.length - rhs.length;
+
+        for (int i = 0, j = 0; i < lhs.length && j < rhs.length; i++, j++) {
+            int a = (lhs[i] & 0xff);
+            int b = (rhs[j] & 0xff);
+            if (a != b)
+                return a - b;
+        }
+
+        return 0;
+    }
+
+    private boolean check(Rpc.Compare req) {
+        ByteString key = req.getKey();
+
+        if (key != null && key.size() > 0) {
+            int operation = req.getResultValue();
+            int target = req.getTargetValue();
+
+            // TODO: versioning
+            Key k = new Key(key, 1);
+            Value v = cache.get(k);
+
+            switch (operation) {
+                case Rpc.Compare.CompareResult.EQUAL_VALUE:
+                    switch (target) {
+                        case Rpc.Compare.CompareTarget.VERSION_VALUE: {
+                            // TODO: versioning
+                            long lhs = v == null ? 0 : 1;
+                            long rhs = req.getVersion();
+                            return lhs == rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            long lhs = v == null ? 0 : v.createRevision();
+                            long rhs = req.getCreateRevision();
+                            return lhs == rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            long lhs = v == null ? 0 : v.modifyRevision();
+                            long rhs = req.getModRevision();
+                            return lhs == rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] rhs = req.getValue().toByteArray();
+                            return Arrays.equals(lhs, rhs);
+                        }
+                        case Rpc.Compare.CompareTarget.LEASE_VALUE:
+                            // TODO: leasing
+                            return false;
+                    }
+                case Rpc.Compare.CompareResult.GREATER_VALUE:
+                    switch (target) {
+                        case Rpc.Compare.CompareTarget.VERSION_VALUE: {
+                            // TODO: versioning
+                            long lhs = v == null ? 0 : 1;
+                            long rhs = req.getVersion();
+                            return lhs > rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            long lhs = v == null ? 0 : v.createRevision();
+                            long rhs = req.getCreateRevision();
+                            return lhs > rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            long lhs = v == null ? 0 : v.modifyRevision();
+                            long rhs = req.getModRevision();
+                            return lhs > rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] rhs = req.getValue().toByteArray();
+                            return compare(lhs, rhs) > 0;
+                        }
+                        case Rpc.Compare.CompareTarget.LEASE_VALUE:
+                            // TODO: leasing
+                            return false;
+                    }
+                case Rpc.Compare.CompareResult.LESS_VALUE:
+                    switch (target) {
+                        case Rpc.Compare.CompareTarget.VERSION_VALUE: {
+                            // TODO: versioning
+                            long lhs = v == null ? 0 : 1;
+                            long rhs = req.getVersion();
+                            return lhs < rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            long lhs = v == null ? 0 : v.createRevision();
+                            long rhs = req.getCreateRevision();
+                            return lhs > rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            long lhs = v == null ? 0 : v.modifyRevision();
+                            long rhs = req.getModRevision();
+                            return lhs < rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] rhs = req.getValue().toByteArray();
+                            return compare(lhs, rhs) < 0;
+                        }
+                        case Rpc.Compare.CompareTarget.LEASE_VALUE:
+                            // TODO: leasing
+                            return false;
+                    }
+                case Rpc.Compare.CompareResult.NOT_EQUAL_VALUE:
+                    switch (target) {
+                        case Rpc.Compare.CompareTarget.VERSION_VALUE: {
+                            // TODO: versioning
+                            long lhs = v == null ? 0 : 1;
+                            long rhs = req.getVersion();
+                            return lhs != rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            long lhs = v == null ? 0 : v.createRevision();
+                            long rhs = req.getCreateRevision();
+                            return lhs != rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            long lhs = v == null ? 0 : v.modifyRevision();
+                            long rhs = req.getModRevision();
+                            return lhs != rhs;
+                        }
+                        case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] rhs = req.getValue().toByteArray();
+                            return !Arrays.equals(lhs, rhs);
+                        }
+                        case Rpc.Compare.CompareTarget.LEASE_VALUE:
+                            // TODO: leasing
+                            return false;
+                    }
+            }
+        }
+
+        return false;
+    }
+
+    private Rpc.ResponseOp exec(Rpc.RequestOp req) {
+        if (req.hasRequestRange())
+            return Rpc.ResponseOp.newBuilder().setResponseRange(range(req.getRequestRange())).build();
+        if (req.hasRequestPut())
+            return Rpc.ResponseOp.newBuilder().setResponsePut(put(req.getRequestPut())).build();
+        if (req.hasRequestDeleteRange())
+            return Rpc.ResponseOp.newBuilder().setResponseDeleteRange(deleteRange(req.getRequestDeleteRange())).build();
+        return Rpc.ResponseOp.newBuilder().setResponseTxn(txn(req.getRequestTxn())).build();
     }
 }

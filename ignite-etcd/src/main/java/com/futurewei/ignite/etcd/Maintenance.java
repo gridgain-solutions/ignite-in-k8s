@@ -2,7 +2,6 @@ package com.futurewei.ignite.etcd;
 
 import etcdserverpb.Rpc;
 
-// TODO: protobuf-agnostic
 public class Maintenance {
     public Rpc.AlarmResponse alarm(Rpc.AlarmRequest req) {
         return Rpc.AlarmResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();

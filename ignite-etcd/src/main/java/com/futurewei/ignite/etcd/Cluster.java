@@ -2,7 +2,6 @@ package com.futurewei.ignite.etcd;
 
 import etcdserverpb.Rpc;
 
-// TODO: protobuf-agnostic
 public final class Cluster {
     public Rpc.MemberAddResponse memberAdd(Rpc.MemberAddRequest req) {
         return Rpc.MemberAddResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();

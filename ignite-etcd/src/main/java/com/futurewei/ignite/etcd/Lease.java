@@ -2,7 +2,6 @@ package com.futurewei.ignite.etcd;
 
 import etcdserverpb.Rpc;
 
-// TODO: protobuf-agnostic
 public final class Lease {
     public Rpc.LeaseGrantResponse leaseGrant(Rpc.LeaseGrantRequest req) {
         return Rpc.LeaseGrantResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();

@@ -2,7 +2,6 @@ package com.futurewei.ignite.etcd;
 
 import etcdserverpb.Rpc;
 
-// TODO: protobuf-agnostic
 public final class Auth {
     public Rpc.AuthEnableResponse authEnable(Rpc.AuthEnableRequest req) {
         return Rpc.AuthEnableResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();

@@ -3,9 +3,14 @@ package com.futurewei.ignite.etcd.grpc;
 import etcdserverpb.KVGrpc;
 import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
+import org.apache.ignite.Ignite;
 
 public final class KV extends KVGrpc.KVImplBase {
-    private final com.futurewei.ignite.etcd.KV impl = new com.futurewei.ignite.etcd.KV();
+    private final com.futurewei.ignite.etcd.KV impl;
+
+    public KV(Ignite ignite, String cacheName) {
+        impl = new com.futurewei.ignite.etcd.KV(ignite, cacheName);
+    }
 
     @Override
     public void range(Rpc.RangeRequest req, StreamObserver<Rpc.RangeResponse> res) {

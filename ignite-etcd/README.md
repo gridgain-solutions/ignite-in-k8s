@@ -1,6 +1,6 @@
 # ignite-etcd
 
-Self-hosted web server exposing with embedded Ignite server node
+Self-hosted gRPC server with embedded Ignite server node exposing
 [etcd-compatible REST endpoints](https://github.com/etcd-io/etcd/blob/release-3.4/etcdserver/etcdserverpb/rpc.proto).
 
 ## Build
