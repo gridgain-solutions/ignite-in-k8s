@@ -17,32 +17,51 @@ import java.util.concurrent.TimeUnit;
 
 public class Cmd {
     public static void main(String[] args) throws ParseException, IOException, InterruptedException {
+        final String PORT_OPT = "p";
+        final String IGNITE_CFG_OPT = "i";
+        final String KV_CACHE_OPT = "c";
+        final String LEASE_CACHE_OPT = "l";
         final int DFLT_PORT = 2397;
-        final String DFLT_CACHE = "etcd";
+        final String DFLT_KV_CACHE = "etcd_kv";
+        final String DFLT_LEASE_CACHE = "etcd_lease";
 
         Options options = new Options()
-                .addOption("p", "server.port", true, "server port (default " + DFLT_PORT + ")")
+                .addOption(PORT_OPT, "server.port", true, "server port (default " + DFLT_PORT + ")")
                 .addOption(
-                        "i",
+                        IGNITE_CFG_OPT,
                         "ignite.config",
                         true,
                         "ignite configuration file (default configuration is used if not specified)"
                 )
-                .addOption("c", "ignite.cache", true, "ignite cache name (default \"" + DFLT_CACHE + "\")");
+                .addOption(
+                        KV_CACHE_OPT,
+                        "ignite.cache.kv",
+                        true,
+                        "ignite KV cache name (default \"" + DFLT_KV_CACHE + "\")"
+                )
+                .addOption(
+                        "l",
+                        "ignite.cache.lease",
+                        true,
+                        "ignite Lease cache name (default \"" + DFLT_LEASE_CACHE + "\")"
+                );
         CommandLine cmd = new DefaultParser().parse(options, args);
 
-        int srvPort = cmd.hasOption("p") ? Integer.parseInt(cmd.getOptionValue("p")) : DFLT_PORT;
-        Ignite ignite = cmd.hasOption("i") ? Ignition.start(cmd.getOptionValue("i")): Ignition.start();
-        String cacheName = cmd.hasOption("c") ? cmd.getOptionValue("c") : DFLT_CACHE;
+        int srvPort = cmd.hasOption(PORT_OPT) ? Integer.parseInt(cmd.getOptionValue(PORT_OPT)) : DFLT_PORT;
+        Ignite ignite = cmd.hasOption(IGNITE_CFG_OPT)
+                ? Ignition.start(cmd.getOptionValue(IGNITE_CFG_OPT))
+                : Ignition.start();
+        String kvCacheName = cmd.hasOption(KV_CACHE_OPT) ? cmd.getOptionValue(KV_CACHE_OPT) : DFLT_KV_CACHE;
+        String leaseCacheName = cmd.hasOption(LEASE_CACHE_OPT) ? cmd.getOptionValue(LEASE_CACHE_OPT) : DFLT_LEASE_CACHE;
 
         HealthStatusManager health = new HealthStatusManager();
         final Server server = ServerBuilder.forPort(srvPort)
                 .addService(new Auth())
                 .addService(new Cluster())
-                .addService(new KV(ignite, cacheName))
-                .addService(new Lease())
+                .addService(new KV(ignite, kvCacheName))
+                .addService(new Lease(ignite, leaseCacheName, kvCacheName))
                 .addService(new Maintenance())
-                .addService(new Watch(ignite, cacheName))
+                .addService(new Watch(ignite, kvCacheName))
                 .addService(ProtoReflectionService.newInstance())
                 .addService(health.getHealthService())
                 .build()

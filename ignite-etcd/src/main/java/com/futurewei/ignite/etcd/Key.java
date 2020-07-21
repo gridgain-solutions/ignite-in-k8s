@@ -1,18 +1,16 @@
 package com.futurewei.ignite.etcd;
 
-import com.google.protobuf.ByteString;
-
 final class Key {
-    private final ByteString data;
+    private final byte[] key;
     private final long ver;
 
-    Key(ByteString data, long ver) {
-        this.data = data;
+    Key(byte[] key, long ver) {
+        this.key = key;
         this.ver = ver;
     }
 
-    ByteString data() {
-        return data;
+    byte[] key() {
+        return key;
     }
 
     long version() {

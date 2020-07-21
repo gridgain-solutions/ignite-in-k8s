@@ -15,7 +15,7 @@ public final class KV {
     private final Cache<Key, Value> cache;
 
     public KV(Ignite ignite, String cacheName) {
-        cache = ignite.getOrCreateCache(cacheName);
+        cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
     }
 
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
@@ -24,14 +24,15 @@ public final class KV {
 
         if (reqKey != null && reqKey.size() > 0) {
             // TODO: versioning
-            Key k = new Key(req.getKey(), 1);
+            ByteString bsk = req.getKey();
+            Key k = new Key(bsk.toByteArray(), 1);
             Value v = cache.get(k);
 
             if (v != null) {
                 Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                        .setKey(k.data())
+                        .setKey(bsk)
                         .setVersion(k.version())
-                        .setValue(v.data())
+                        .setValue(ByteString.copyFrom(v.value()))
                         .setCreateRevision(v.createRevision())
                         .setModRevision(v.modifyRevision());
 
@@ -45,6 +46,7 @@ public final class KV {
     public Rpc.PutResponse put(Rpc.PutRequest req) {
         ByteString reqKey = req.getKey();
         ByteString reqVal = req.getValue();
+        long lease = req.getLease();
         long rev;
 
         if (reqKey != null && reqKey.size() > 0 && reqVal != null && reqVal.size() > 0) {
@@ -52,16 +54,18 @@ public final class KV {
 
             // TODO: versioning
             // TODO: atomicity
-            Key k = new Key(reqKey, 1);
+            Key k = new Key(reqKey.toByteArray(), 1);
             Value curVal = cache.get(k);
 
             Value v = curVal == null
-                    ? new Value(reqVal, rev, rev)
-                    : new Value(reqVal, curVal.createRevision(), rev);
+                    ? new Value(reqVal.toByteArray(), rev, rev)
+                    : new Value(reqVal.toByteArray(), curVal.createRevision(), rev);
+
+            if (lease != 0)
+                v.lease(lease);
 
             cache.put(k, v);
-        }
-        else
+        } else
             rev = Context.revision();
 
         return Rpc.PutResponse.newBuilder().setHeader(Context.getHeader(rev)).build();
@@ -76,12 +80,11 @@ public final class KV {
             rev = Context.incrementRevision();
 
             // TODO: versioning
-            Key k = new Key(reqKey, 1);
+            Key k = new Key(reqKey.toByteArray(), 1);
 
             if (cache.remove(k))
                 cnt++;
-        }
-        else
+        } else
             rev = Context.revision();
 
         return Rpc.DeleteRangeResponse.newBuilder().setHeader(Context.getHeader(rev)).setDeleted(cnt).build();
@@ -140,7 +143,7 @@ public final class KV {
             int target = req.getTargetValue();
 
             // TODO: versioning
-            Key k = new Key(key, 1);
+            Key k = new Key(key.toByteArray(), 1);
             Value v = cache.get(k);
 
             switch (operation) {
@@ -163,7 +166,7 @@ public final class KV {
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
-                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return Arrays.equals(lhs, rhs);
                         }
@@ -190,7 +193,7 @@ public final class KV {
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
-                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return compare(lhs, rhs) > 0;
                         }
@@ -217,7 +220,7 @@ public final class KV {
                             return lhs < rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
-                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return compare(lhs, rhs) < 0;
                         }
@@ -244,7 +247,7 @@ public final class KV {
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
-                            byte[] lhs = v == null ? null : v.data().toByteArray();
+                            byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return !Arrays.equals(lhs, rhs);
                         }
