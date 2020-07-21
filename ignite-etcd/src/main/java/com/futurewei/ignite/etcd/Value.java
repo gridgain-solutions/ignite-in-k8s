@@ -1,20 +1,19 @@
 package com.futurewei.ignite.etcd;
 
-import com.google.protobuf.ByteString;
-
 final class Value {
-    private final ByteString data;
+    private final byte[] val;
     private final long crtRev;
     private final long modRev;
+    private long lease;
 
-    Value(ByteString data, long crtRev, long modRev) {
-        this.data = data;
+    Value(byte[] val, long crtRev, long modRev) {
+        this.val = val;
         this.crtRev = crtRev;
         this.modRev = modRev;
     }
 
-    ByteString data() {
-        return data;
+    byte[] value() {
+        return val;
     }
 
     long createRevision() {
@@ -23,5 +22,14 @@ final class Value {
 
     long modifyRevision() {
         return modRev;
+    }
+
+    public long lease() {
+        return lease;
+    }
+
+    public Value lease(long lease) {
+        this.lease = lease;
+        return this;
     }
 }

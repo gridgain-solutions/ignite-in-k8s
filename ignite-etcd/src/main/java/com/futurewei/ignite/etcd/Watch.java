@@ -1,5 +1,6 @@
 package com.futurewei.ignite.etcd;
 
+import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
 import mvccpb.Kv;
 import org.apache.ignite.Ignite;
@@ -19,7 +20,7 @@ public final class Watch {
     private final Map<Long, Watcher> watchers = new ConcurrentHashMap<>();
 
     public Watch(Ignite ignite, String cacheName) {
-        cache = ignite.getOrCreateCache(cacheName);
+        cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
     }
 
     public Rpc.WatchResponse watch(Rpc.WatchRequest req) throws InterruptedException {
@@ -28,8 +29,7 @@ public final class Watch {
         if (req.hasCreateRequest()) {
             Rpc.WatchCreateRequest startReq = req.getCreateRequest();
             res.addAllEvents(await(startReq)).setWatchId(startReq.getWatchId()).setCreated(true);
-        }
-        else if (req.hasCancelRequest()) {
+        } else if (req.hasCancelRequest()) {
             Rpc.WatchCancelRequest stopReq = req.getCancelRequest();
             cancel(stopReq);
             res.setWatchId(stopReq.getWatchId()).setCanceled(true);
@@ -55,14 +55,15 @@ public final class Watch {
         private final Rpc.WatchCreateRequest req;
         private final CountDownLatch done = new CountDownLatch(1);
 
-        public Watcher(Cache<Key, Value>  cache, Rpc.WatchCreateRequest req) {
+        public Watcher(Cache<Key, Value> cache, Rpc.WatchCreateRequest req) {
             this.cache = cache;
             this.req = req;
         }
 
         public Collection<Kv.Event> await() throws InterruptedException {
             // TODO: proper Watch implementation
-            final Key K = new Key(req.getKey(), 1);
+            final ByteString BSK = req.getKey();
+            final Key K = new Key(BSK.toByteArray(), 1);
             final AtomicReference<InterruptedException> err = new AtomicReference<>();
             final Collection<Kv.Event> evtList = new ArrayList<>();
 
@@ -72,9 +73,9 @@ public final class Watch {
                         Value v = cache.get(K);
                         if (v != null) {
                             Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                                    .setKey(K.data())
+                                    .setKey(BSK)
                                     .setVersion(K.version())
-                                    .setValue(v.data())
+                                    .setValue(ByteString.copyFrom(v.value()))
                                     .setCreateRevision(v.createRevision())
                                     .setModRevision(v.modifyRevision());
                             evtList.add(Kv.Event.newBuilder().setType(Kv.Event.EventType.PUT).setKv(kv).build());
@@ -82,8 +83,7 @@ public final class Watch {
                             done.countDown();
                         }
                     }
-                }
-                catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     err.set(e);
                 }
             });

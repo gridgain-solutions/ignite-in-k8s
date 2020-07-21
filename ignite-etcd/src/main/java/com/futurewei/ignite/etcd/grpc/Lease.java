@@ -3,9 +3,14 @@ package com.futurewei.ignite.etcd.grpc;
 import etcdserverpb.LeaseGrpc;
 import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
+import org.apache.ignite.Ignite;
 
 public final class Lease extends LeaseGrpc.LeaseImplBase {
-    private final com.futurewei.ignite.etcd.Lease impl = new com.futurewei.ignite.etcd.Lease();
+    private final com.futurewei.ignite.etcd.Lease impl;
+
+    public Lease(Ignite ignite, String cacheName, String kvCacheName) {
+        impl = new com.futurewei.ignite.etcd.Lease(ignite, cacheName, kvCacheName);
+    }
 
     @Override
     public void leaseGrant(Rpc.LeaseGrantRequest req, StreamObserver<Rpc.LeaseGrantResponse> res) {
@@ -24,7 +29,7 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(Rpc.LeaseKeepAliveRequest req) {
-                impl.leaseKeepAlive(req);
+                res.onNext(impl.leaseKeepAlive(req));
             }
 
             @Override

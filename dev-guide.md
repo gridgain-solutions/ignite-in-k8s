@@ -21,9 +21,9 @@
     - Work directories: 
       - ```sudo mkdir -p /var/run/kubernetes; sudo chown `whoami`:`whoami` /var/run/kubernetes```
     - Etcd: 
-      - ignite-etcd: `.ignite-etcd/build/install/ignite-etcd/bin/ignite-etcd --server.port=2379`
+      - ignite-etcd: `ignite-etcd/build/install/ignite-etcd/bin/ignite-etcd --server.port=2379`
       - OR native etcd: `$K8S_REPO/third_party/etcd/etcd --listen-client-urls=http://127.0.0.1:2379 --advertise-client-urls=http://127.0.0.1:2379 --data-dir=/tmp/default.etcd` 
-    - API Server: `$K8S_REPO/_output/bin/kube-apiserver --etcd-servers=http://127.0.0.1:2379 --service-cluster-ip-range=127.0.0.1/24`
+    - API Server: `$K8S_REPO/_output/bin/kube-apiserver --etcd-servers=http://127.0.0.1:2379 --service-cluster-ip-range=127.0.0.1/24 --storage-media-type=application/json`
     - Scheduler: `$K8S_REPO/_output/bin/kube-scheduler --master=http://127.0.0.1:8080`
     - Controller Manager: `$K8S_REPO/_output/bin/kube-controller-manager --master=http://127.0.0.1:8080 --service-account-private-key-file=/var/run/kubernetes/apiserver.key`
     - Configuration: 
