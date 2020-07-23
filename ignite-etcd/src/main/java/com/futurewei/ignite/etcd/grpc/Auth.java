@@ -3,9 +3,14 @@ package com.futurewei.ignite.etcd.grpc;
 import etcdserverpb.AuthGrpc;
 import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
+import org.apache.ignite.Ignite;
 
 public final class Auth extends AuthGrpc.AuthImplBase {
-    private final com.futurewei.ignite.etcd.Auth impl = new com.futurewei.ignite.etcd.Auth();
+    private final com.futurewei.ignite.etcd.Auth impl;
+
+    public Auth(Ignite ignite) {
+        impl = new com.futurewei.ignite.etcd.Auth(ignite);
+    }
 
     @Override
     public void authEnable(Rpc.AuthEnableRequest req, StreamObserver<Rpc.AuthEnableResponse> res) {

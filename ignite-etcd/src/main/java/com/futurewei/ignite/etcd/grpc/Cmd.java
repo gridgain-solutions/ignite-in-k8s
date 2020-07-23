@@ -5,10 +5,7 @@ import io.grpc.ServerBuilder;
 import io.grpc.health.v1.HealthCheckResponse;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.services.HealthStatusManager;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 
@@ -44,8 +41,14 @@ public class Cmd {
                         "ignite.cache.lease",
                         true,
                         "ignite Lease cache name (default \"" + DFLT_LEASE_CACHE + "\")"
-                );
+                )
+                .addOption("h", "help", false, "print usage");
         CommandLine cmd = new DefaultParser().parse(options, args);
+
+        if (cmd.hasOption("h")) {
+            new HelpFormatter().printHelp("ignite-etcd", options);
+            System.exit(0);
+        }
 
         int srvPort = cmd.hasOption(PORT_OPT) ? Integer.parseInt(cmd.getOptionValue(PORT_OPT)) : DFLT_PORT;
         Ignite ignite = cmd.hasOption(IGNITE_CFG_OPT)
@@ -56,11 +59,11 @@ public class Cmd {
 
         HealthStatusManager health = new HealthStatusManager();
         final Server server = ServerBuilder.forPort(srvPort)
-                .addService(new Auth())
-                .addService(new Cluster())
+                .addService(new Auth(ignite))
+                .addService(new Cluster(ignite))
                 .addService(new KV(ignite, kvCacheName))
                 .addService(new Lease(ignite, leaseCacheName, kvCacheName))
-                .addService(new Maintenance())
+                .addService(new Maintenance(ignite))
                 .addService(new Watch(ignite, kvCacheName))
                 .addService(ProtoReflectionService.newInstance())
                 .addService(health.getHealthService())

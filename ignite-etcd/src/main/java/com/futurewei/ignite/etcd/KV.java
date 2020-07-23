@@ -13,13 +13,15 @@ import java.util.stream.Collectors;
 
 public final class KV {
     private final Cache<Key, Value> cache;
+    private final Context ctx;
 
     public KV(Ignite ignite, String cacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
+        ctx = new Context(ignite);
     }
 
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
-        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(Context.revision()));
+        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
         ByteString reqKey = req.getKey();
 
         if (reqKey != null && reqKey.size() > 0) {
@@ -50,7 +52,7 @@ public final class KV {
         long rev;
 
         if (reqKey != null && reqKey.size() > 0 && reqVal != null && reqVal.size() > 0) {
-            rev = Context.incrementRevision();
+            rev = ctx.incrementRevision();
 
             // TODO: versioning
             // TODO: atomicity
@@ -66,7 +68,7 @@ public final class KV {
 
             cache.put(k, v);
         } else
-            rev = Context.revision();
+            rev = ctx.revision();
 
         return Rpc.PutResponse.newBuilder().setHeader(Context.getHeader(rev)).build();
     }
@@ -77,7 +79,7 @@ public final class KV {
         long cnt = 0;
 
         if (reqKey != null && reqKey.size() > 0) {
-            rev = Context.incrementRevision();
+            rev = ctx.incrementRevision();
 
             // TODO: versioning
             Key k = new Key(reqKey.toByteArray(), 1);
@@ -85,7 +87,7 @@ public final class KV {
             if (cache.remove(k))
                 cnt++;
         } else
-            rev = Context.revision();
+            rev = ctx.revision();
 
         return Rpc.DeleteRangeResponse.newBuilder().setHeader(Context.getHeader(rev)).setDeleted(cnt).build();
     }
@@ -105,7 +107,7 @@ public final class KV {
         }
 
         Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
-                .setHeader(Context.getHeader(Context.revision()))
+                .setHeader(Context.getHeader(ctx.revision()))
                 .setSucceeded(ok);
 
         if (resList != null)
@@ -115,7 +117,7 @@ public final class KV {
     }
 
     public Rpc.CompactionResponse compact(Rpc.CompactionRequest req) {
-        return Rpc.CompactionResponse.newBuilder().setHeader(Context.getHeader(Context.revision())).build();
+        return Rpc.CompactionResponse.newBuilder().setHeader(Context.getHeader(ctx.revision())).build();
     }
 
     private static int compare(byte[] lhs, byte[] rhs) {
