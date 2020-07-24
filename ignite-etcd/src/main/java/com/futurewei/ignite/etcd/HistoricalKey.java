@@ -1,19 +1,14 @@
 package com.futurewei.ignite.etcd;
 
-final class HistoricalKey {
-    private final byte[] key;
+/**
+ * {@link Key} with {@link #modifyRevision()}.
+ */
+public final class HistoricalKey extends Key {
     private final long modRev;
 
     HistoricalKey(byte[] key, long modRev) {
-        this.key = key;
+        super(key);
         this.modRev = modRev;
-    }
-
-    /**
-     * @return key in bytes. An empty key is not allowed.
-     */
-    byte[] key() {
-        return key;
     }
 
     /**

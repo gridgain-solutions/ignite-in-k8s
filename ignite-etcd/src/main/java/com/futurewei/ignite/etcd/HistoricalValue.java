@@ -4,16 +4,17 @@ package com.futurewei.ignite.etcd;
  * {@link Value} without {@link Value#modifyRevision()} since {@link HistoricalValue} is always paired with
  * {@link HistoricalKey} that already has {@link HistoricalKey#modifyRevision()}.
  */
-class HistoricalValue {
+public class HistoricalValue {
     private final byte[] val;
     private final long crtRev;
     private final long ver;
-    private long lease;
+    private final long lease;
 
-    HistoricalValue(byte[] val, long crtRev, long ver) {
+    HistoricalValue(byte[] val, long crtRev, long ver, long lease) {
         this.val = val;
         this.crtRev = crtRev;
         this.ver = ver;
+        this.lease = lease;
     }
 
     /**
@@ -44,10 +45,5 @@ class HistoricalValue {
      */
     public long lease() {
         return lease;
-    }
-
-    public HistoricalValue lease(long lease) {
-        this.lease = lease;
-        return this;
     }
 }

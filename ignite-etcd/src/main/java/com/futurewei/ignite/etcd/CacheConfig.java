@@ -38,14 +38,14 @@ public final class CacheConfig {
      * Default KV cache configuration is used if the user did not specify external configuration according
      * to {@link #KVSpec}.
      */
-    static CacheConfiguration<byte[], Value> KV(String cacheName) {
-        return new CacheConfiguration<byte[], Value>(cacheName)
+    static CacheConfiguration<Key, Value> KV(String cacheName) {
+        return new CacheConfiguration<Key, Value>(cacheName)
             .setCacheMode(CacheMode.PARTITIONED)
             .setBackups(1)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
             .setSqlSchema("PUBLIC")
             .setQueryEntities(Collections.singleton(
-                new QueryEntity(byte[].class, Value.class)
+                new QueryEntity(Key.class, Value.class)
                     .setTableName("ETCD_KV")
                     .addQueryField("key", byte[].class.getName(), null)
                     .addQueryField("val", byte[].class.getName(), "VALUE")

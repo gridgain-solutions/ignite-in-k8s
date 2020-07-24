@@ -4,16 +4,17 @@ import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
 import mvccpb.Kv;
 import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
+import org.apache.ignite.cache.query.ScanQuery;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
 
-import javax.cache.Cache;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.stream.Collectors;
 
 public final class KV {
-    private final Cache<byte[], Value> cache;
-    private final Cache<HistoricalKey, HistoricalValue> histCache;
+    private final IgniteCache<Key, Value> cache;
+    private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
     private final Context ctx;
 
     public KV(Ignite ignite, String cacheName, String histCacheName) {
@@ -26,10 +27,7 @@ public final class KV {
         Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
 
         // the first key for the range. If range_end is not given, the request only looks up key.
-        ByteString reqKey = req.getKey();
-
-        if (reqKey == null || reqKey.isEmpty())
-            return res.build();
+        ByteString key = req.getKey();
 
         // the upper bound on the requested range [key, range_end).
         // If range_end is '\0', the range is all keys >= key.
@@ -37,6 +35,12 @@ public final class KV {
         // then the range request gets all keys prefixed with key.
         // If both key and range_end are '\0', then the range request returns all keys.
         ByteString rangeEnd = req.getRangeEnd();
+
+        // when set returns only the count of the keys in the range.
+        boolean cntOnly = req.getCountOnly();
+
+        // when set returns only the keys and not the values.
+        boolean keysOnly = req.getKeysOnly();
 
         // a limit on the number of keys returned for the request. When limit is set to 0, it is treated as no limit.
         long limit = req.getLimit();
@@ -52,40 +56,58 @@ public final class KV {
         // sort_target is the key-value field to use for sorting.
         Rpc.RangeRequest.SortTarget sortTarget = req.getSortTarget();
 
-        // when set returns only the keys and not the values.
-        boolean keysOnly = req.getKeysOnly();
-
-        // when set returns only the count of the keys in the range.
-        boolean cntOnly = req.getCountOnly();
-
-        // the lower bound for returned key mod revisions; all keys with lesser mod revisions will be filtered away.
+        // the lower bound for returned key mod revisions; all keys with lesser mod revisions will
+        // be filtered away.
         long minModRev = req.getMinModRevision();
 
-        // the upper bound for returned key mod revisions; all keys with greater mod revisions will be filtered away.
+        // the upper bound for returned key mod revisions; all keys with greater mod revisions
+        // will be filtered away.
         long maxModRev = req.getMaxModRevision();
 
-        // the lower bound for returned key create revisions; all keys with lesser create revisions will be filtered
-        // away.
+        // the lower bound for returned key create revisions; all keys with lesser create revisions
+        // will be filtered away.
         long minCrtRev = req.getMinCreateRevision();
 
-        // the upper bound for returned key create revisions; all keys with greater create revisions will be filtered
-        // away.
+        // the upper bound for returned key create revisions; all keys with greater create revisions
+        // will be filtered away.
         long maxCrtRev = req.getMaxCreateRevision();
 
-        // TODO: versioning
-        ByteString bsk = req.getKey();
-        byte[] k = bsk.toByteArray();
-        Value v = cache.get(k);
+        Key start = key.isEmpty() ? null : new Key(key.toByteArray());
+        Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
 
-        if (v != null) {
-            Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                .setKey(bsk)
-                .setVersion(v.version())
-                .setValue(ByteString.copyFrom(v.value()))
-                .setCreateRevision(v.createRevision())
-                .setModRevision(v.modifyRevision());
+        if (cntOnly) {
+            long cnt = count(start, end, limit, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+            res.setCount(cnt);
+        } else {
+            Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
+                start,
+                end,
+                limit,
+                rev,
+                minModRev,
+                maxModRev,
+                minCrtRev,
+                maxCrtRev,
+                keysOnly,
+                sortOrder,
+                sortTarget
+            );
 
-            res.setCount(1).addKvs(kv);
+            for (SimpleImmutableEntry<Key, Value> entry : kvs) {
+                Value v = entry.getValue();
+                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
+                    .setKey(ByteString.copyFrom(entry.getKey().key()))
+                    .setVersion(v.version())
+                    .setCreateRevision(v.createRevision())
+                    .setModRevision(v.modifyRevision());
+
+                if (!keysOnly)
+                    kv.setValue(ByteString.copyFrom(v.value()));
+
+                res.addKvs(kv);
+            }
+
+            res.setCount(kvs.size());
         }
 
         return res.build();
@@ -102,15 +124,12 @@ public final class KV {
 
             // TODO: versioning
             // TODO: atomicity
-            byte[] k = reqKey.toByteArray();
+            Key k = new Key(reqKey.toByteArray());
             Value curVal = cache.get(k);
 
             Value v = curVal == null
-                ? new Value(reqVal.toByteArray(), rev, rev, 1)
-                : new Value(reqVal.toByteArray(), curVal.createRevision(), rev, 1);
-
-            if (lease != 0)
-                v.lease(lease);
+                ? new Value(reqVal.toByteArray(), rev, rev, 1, lease)
+                : new Value(reqVal.toByteArray(), curVal.createRevision(), rev, 1, lease);
 
             cache.put(k, v);
         } else
@@ -128,7 +147,7 @@ public final class KV {
             rev = ctx.incrementRevision();
 
             // TODO: versioning
-            byte[] k = reqKey.toByteArray();
+            Key k = new Key(reqKey.toByteArray());
 
             if (cache.remove(k))
                 cnt++;
@@ -191,7 +210,7 @@ public final class KV {
             int target = req.getTargetValue();
 
             // TODO: versioning
-            byte[] k = key.toByteArray();
+            Key k = new Key(key.toByteArray());
             Value v = cache.get(k);
 
             switch (operation) {
@@ -317,5 +336,108 @@ public final class KV {
         if (req.hasRequestDeleteRange())
             return Rpc.ResponseOp.newBuilder().setResponseDeleteRange(deleteRange(req.getRequestDeleteRange())).build();
         return Rpc.ResponseOp.newBuilder().setResponseTxn(txn(req.getRequestTxn())).build();
+    }
+
+    private Collection<SimpleImmutableEntry<Key, Value>> range(
+        Key start,
+        Key end,
+        long limit,
+        long rev,
+        long minModRev,
+        long maxModRev,
+        long minCrtRev,
+        long maxCrtRev,
+        boolean noPayload,
+        Rpc.RangeRequest.SortOrder sortOrder,
+        Rpc.RangeRequest.SortTarget sortTarget
+    ) {
+        if (!noPayload && allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
+            if (!start.isZero() && end == null) {
+                // Optimization for getting single entry with payload without filtering
+                Value v = cache.get(start);
+
+                return v == null
+                    ? Collections.emptyList()
+                    : Collections.singletonList(new SimpleImmutableEntry<>(start, v));
+            } else if (start.isZero() && end.isZero() && limit <= 0 && sortOrder == Rpc.RangeRequest.SortOrder.NONE) {
+                // Optimization for getting all entries with payload without filtering, sorting and limit
+                return cache.query(new ScanQuery<Key, Value>()).getAll().stream()
+                    .map(e -> new SimpleImmutableEntry<>(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList());
+            }
+        }
+
+        Collection<String> flds = Arrays.asList("CREATE_REVISION", "MODIFY_REVISION", "VERSION", "LEASE", "KEY");
+
+        if (!noPayload)
+            flds.add("VALUE");
+
+        String sqlFilter = sqlFilter(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+
+
+
+        SqlFieldsQuery q = new SqlFieldsQuery(
+            "SELECT CREATE_REVISION, MODIFY_REVISION, VERSION, LEASE FROM ETCD_KV WHERE KEY = ?"
+        ).setArgs(k);
+
+        List<List<?>> tbl = cache.query(q).getAll();
+
+        if (tbl.isEmpty())
+            return null;
+
+        Iterator<?> it = tbl.iterator().next().iterator();
+
+        return new Value(null, (Long)it.next(), (Long)it.next(), (Long)it.next(), (Long)it.next());
+    }
+
+    private long count(
+        Key start,
+        Key end,
+        long limit,
+        long rev,
+        long minModRev,
+        long maxModRev,
+        long minCrtRev,
+        long maxCrtRev
+    ) {
+        if (limit <= 0)
+            return 0;
+
+        if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
+            if (!start.isZero() && end == null)
+                // Optimization for a popular case to check single entry without filtering
+                return cache.containsKey(start) ? 1 : 0;
+            else if (start.isZero() && end.isZero()) {
+                // Optimization for counting all entries without filtering
+                return Math.min(cache.size(), limit);
+            }
+        }
+    }
+
+    private static boolean allZeroOrNegative(long n1, long n2, long n3, long n4, long n5) {
+        return n1 <= 0 && n2 <= 0 && n3 <= 0 && n4 <= 0 && n5 <= 0;
+    }
+
+    private static SimpleImmutableEntry<String, Collection<Object>> String sqlFilter(
+        Key start,
+        Key end,
+        long rev,
+        long minModRev,
+        long maxModRev,
+        long minCrtRev,
+        long maxCrtRev
+    ) {
+        Collection<String> filters = new ArrayList<>();
+        Collection<Object> args = new ArrayList<>();
+
+        if (!start.isZero()) {
+            filters.add("KEY " + end == null ? "=" : ">=" + " ?\n");
+            args.add(start);
+        }
+
+        if (end != null && !end.isZero()) {
+            filters.add("VALUE < ?");
+            args.add(end);
+        }
     }
 }

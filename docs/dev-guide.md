@@ -41,7 +41,13 @@
     - Proxy: TBD
 
 - Test
-  - `$K8S_REPO/_output/bin/kubectl get nodes`
-  - `$K8S_REPO/_output/bin/kubectl apply -f busybox-sleep.yaml`    
-  - `$K8S_REPO/_output/bin/kubectl get pods`
-  - `$K8S_REPO/_output/bin/kubectl logs busybox-sleep`
+  - With `etcdctl` (`alias etcdctl="$K8S_REPO/third_party/etcd/etcdctl --endpoints=127.0.0.1:2379 -w=json --keepalive-timeout=600s"`):
+    - [Examples from etcd documentation](https://etcd.io/docs/v3.4.0/dev-guide/interacting_v3/)
+    - All keys wih history: `etcdctl get "" --from-key` 
+  - With `curl`:
+    - `curl -s -d '{"key": [0], "range_end": [0], "max_mod_revision": 7}' -X POST http://localhost:2379/v3/kv/range`
+  - With `kubectl` (`alias kubectl="$K8S_REPO/_output/bin/kubectl"`)
+    - `kubectl get nodes`
+    - `kubectl apply -f busybox-sleep.yaml`    
+    - `kubectl get pods`
+    - `kubectl logs busybox-sleep`

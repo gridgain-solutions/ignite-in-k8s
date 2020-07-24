@@ -1,10 +1,10 @@
 package com.futurewei.ignite.etcd;
 
-final class Value extends HistoricalValue {
+public final class Value extends HistoricalValue {
     private final long modRev;
 
-    Value(byte[] val, long crtRev, long modRev, long ver) {
-        super(val, crtRev, ver);
+    Value(byte[] val, long crtRev, long modRev, long ver, long lease) {
+        super(val, crtRev, ver, lease);
         this.modRev = modRev;
     }
 

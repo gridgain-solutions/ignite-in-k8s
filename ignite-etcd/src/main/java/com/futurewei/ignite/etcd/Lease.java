@@ -21,7 +21,7 @@ public final class Lease {
 
         ctx = new Context(ignite);
 
-        CacheConfiguration<byte[], Value> kvCacheCfg = CacheConfig.KV(kvCacheName);
+        CacheConfiguration<Key, Value> kvCacheCfg = CacheConfig.KV(kvCacheName);
 
         ignite.getOrCreateCache(kvCacheCfg);
     }

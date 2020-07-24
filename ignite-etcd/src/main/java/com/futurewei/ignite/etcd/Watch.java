@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class Watch {
-    private final Cache<byte[], Value> cache;
+    private final Cache<Key, Value> cache;
     private final Context ctx;
     private final Map<Long, Watcher> watchers = new ConcurrentHashMap<>();
 
@@ -53,19 +53,19 @@ public final class Watch {
     }
 
     private static final class Watcher {
-        private final Cache<byte[], Value> cache;
+        private final Cache<Key, Value> cache;
         private final Rpc.WatchCreateRequest req;
         private final CountDownLatch done = new CountDownLatch(1);
 
-        public Watcher(Cache<byte[], Value> cache, Rpc.WatchCreateRequest req) {
+        public Watcher(Cache<Key, Value> cache, Rpc.WatchCreateRequest req) {
             this.cache = cache;
             this.req = req;
         }
 
         public Collection<Kv.Event> await() throws InterruptedException {
             // TODO: proper Watch implementation
-            final ByteString BSK = req.getKey();
-            final byte[] k = BSK.toByteArray();
+            final ByteString bsk = req.getKey();
+            final Key k = new Key (bsk.toByteArray());
             final AtomicReference<InterruptedException> err = new AtomicReference<>();
             final Collection<Kv.Event> evtList = new ArrayList<>();
 
@@ -75,7 +75,7 @@ public final class Watch {
                         Value v = cache.get(k);
                         if (v != null) {
                             Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                                .setKey(BSK)
+                                .setKey(bsk)
                                 .setVersion(v.version())
                                 .setValue(ByteString.copyFrom(v.value()))
                                 .setCreateRevision(v.createRevision())
