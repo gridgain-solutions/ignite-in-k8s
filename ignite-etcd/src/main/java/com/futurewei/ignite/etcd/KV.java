@@ -12,34 +12,80 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public final class KV {
-    private final Cache<Key, Value> cache;
+    private final Cache<byte[], Value> cache;
+    private final Cache<HistoricalKey, HistoricalValue> histCache;
     private final Context ctx;
 
-    public KV(Ignite ignite, String cacheName) {
+    public KV(Ignite ignite, String cacheName, String histCacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
+        histCache = ignite.getOrCreateCache(CacheConfig.KVHistory(histCacheName));
         ctx = new Context(ignite);
     }
 
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
         Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
+
+        // the first key for the range. If range_end is not given, the request only looks up key.
         ByteString reqKey = req.getKey();
 
-        if (reqKey != null && reqKey.size() > 0) {
-            // TODO: versioning
-            ByteString bsk = req.getKey();
-            Key k = new Key(bsk.toByteArray(), 1);
-            Value v = cache.get(k);
+        if (reqKey == null || reqKey.isEmpty())
+            return res.build();
 
-            if (v != null) {
-                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                        .setKey(bsk)
-                        .setVersion(k.version())
-                        .setValue(ByteString.copyFrom(v.value()))
-                        .setCreateRevision(v.createRevision())
-                        .setModRevision(v.modifyRevision());
+        // the upper bound on the requested range [key, range_end).
+        // If range_end is '\0', the range is all keys >= key.
+        // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
+        // then the range request gets all keys prefixed with key.
+        // If both key and range_end are '\0', then the range request returns all keys.
+        ByteString rangeEnd = req.getRangeEnd();
 
-                res.setCount(1).addKvs(kv);
-            }
+        // a limit on the number of keys returned for the request. When limit is set to 0, it is treated as no limit.
+        long limit = req.getLimit();
+
+        // revision is the point-in-time of the key-value store to use for the range.
+        // If revision is less or equal to zero, the range is over the newest key-value store.
+        // If the revision has been compacted, ErrCompacted is returned as a response.
+        long rev = req.getRevision();
+
+        // sort_order is the order for returned sorted results.
+        Rpc.RangeRequest.SortOrder sortOrder = req.getSortOrder();
+
+        // sort_target is the key-value field to use for sorting.
+        Rpc.RangeRequest.SortTarget sortTarget = req.getSortTarget();
+
+        // when set returns only the keys and not the values.
+        boolean keysOnly = req.getKeysOnly();
+
+        // when set returns only the count of the keys in the range.
+        boolean cntOnly = req.getCountOnly();
+
+        // the lower bound for returned key mod revisions; all keys with lesser mod revisions will be filtered away.
+        long minModRev = req.getMinModRevision();
+
+        // the upper bound for returned key mod revisions; all keys with greater mod revisions will be filtered away.
+        long maxModRev = req.getMaxModRevision();
+
+        // the lower bound for returned key create revisions; all keys with lesser create revisions will be filtered
+        // away.
+        long minCrtRev = req.getMinCreateRevision();
+
+        // the upper bound for returned key create revisions; all keys with greater create revisions will be filtered
+        // away.
+        long maxCrtRev = req.getMaxCreateRevision();
+
+        // TODO: versioning
+        ByteString bsk = req.getKey();
+        byte[] k = bsk.toByteArray();
+        Value v = cache.get(k);
+
+        if (v != null) {
+            Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
+                .setKey(bsk)
+                .setVersion(v.version())
+                .setValue(ByteString.copyFrom(v.value()))
+                .setCreateRevision(v.createRevision())
+                .setModRevision(v.modifyRevision());
+
+            res.setCount(1).addKvs(kv);
         }
 
         return res.build();
@@ -56,12 +102,12 @@ public final class KV {
 
             // TODO: versioning
             // TODO: atomicity
-            Key k = new Key(reqKey.toByteArray(), 1);
+            byte[] k = reqKey.toByteArray();
             Value curVal = cache.get(k);
 
             Value v = curVal == null
-                    ? new Value(reqVal.toByteArray(), rev, rev)
-                    : new Value(reqVal.toByteArray(), curVal.createRevision(), rev);
+                ? new Value(reqVal.toByteArray(), rev, rev, 1)
+                : new Value(reqVal.toByteArray(), curVal.createRevision(), rev, 1);
 
             if (lease != 0)
                 v.lease(lease);
@@ -82,7 +128,7 @@ public final class KV {
             rev = ctx.incrementRevision();
 
             // TODO: versioning
-            Key k = new Key(reqKey.toByteArray(), 1);
+            byte[] k = reqKey.toByteArray();
 
             if (cache.remove(k))
                 cnt++;
@@ -107,8 +153,8 @@ public final class KV {
         }
 
         Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
-                .setHeader(Context.getHeader(ctx.revision()))
-                .setSucceeded(ok);
+            .setHeader(Context.getHeader(ctx.revision()))
+            .setSucceeded(ok);
 
         if (resList != null)
             res.addAllResponses(resList);
@@ -145,7 +191,7 @@ public final class KV {
             int target = req.getTargetValue();
 
             // TODO: versioning
-            Key k = new Key(key.toByteArray(), 1);
+            byte[] k = key.toByteArray();
             Value v = cache.get(k);
 
             switch (operation) {

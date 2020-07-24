@@ -8,8 +8,8 @@ import org.apache.ignite.Ignite;
 public final class KV extends KVGrpc.KVImplBase {
     private final com.futurewei.ignite.etcd.KV impl;
 
-    public KV(Ignite ignite, String cacheName) {
-        impl = new com.futurewei.ignite.etcd.KV(ignite, cacheName);
+    public KV(Ignite ignite, String cacheName, String histCacheName) {
+        impl = new com.futurewei.ignite.etcd.KV(ignite, cacheName, histCacheName);
     }
 
     @Override

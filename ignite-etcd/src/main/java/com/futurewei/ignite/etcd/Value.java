@@ -1,35 +1,17 @@
 package com.futurewei.ignite.etcd;
 
-final class Value {
-    private final byte[] val;
-    private final long crtRev;
+final class Value extends HistoricalValue {
     private final long modRev;
-    private long lease;
 
-    Value(byte[] val, long crtRev, long modRev) {
-        this.val = val;
-        this.crtRev = crtRev;
+    Value(byte[] val, long crtRev, long modRev, long ver) {
+        super(val, crtRev, ver);
         this.modRev = modRev;
     }
 
-    byte[] value() {
-        return val;
-    }
-
-    long createRevision() {
-        return crtRev;
-    }
-
+    /**
+     * @return the revision of last modification on this key.
+     */
     long modifyRevision() {
         return modRev;
-    }
-
-    public long lease() {
-        return lease;
-    }
-
-    public Value lease(long lease) {
-        this.lease = lease;
-        return this;
     }
 }
