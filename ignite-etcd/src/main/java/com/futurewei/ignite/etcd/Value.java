@@ -8,6 +8,11 @@ public final class Value extends HistoricalValue {
         this.modRev = modRev;
     }
 
+    Value(HistoricalValue histVal, long modRev) {
+        super(histVal.value(), histVal.createRevision(), histVal.version(), histVal.lease());
+        this.modRev = modRev;
+    }
+
     /**
      * @return the revision of last modification on this key.
      */

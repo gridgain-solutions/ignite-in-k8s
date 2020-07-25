@@ -6,8 +6,8 @@ package com.futurewei.ignite.etcd;
 public final class HistoricalKey extends Key {
     private final long modRev;
 
-    HistoricalKey(byte[] key, long modRev) {
-        super(key);
+    HistoricalKey(Key key, long modRev) {
+        super(key.key());
         this.modRev = modRev;
     }
 

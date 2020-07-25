@@ -8,8 +8,15 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 
-import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class KV {
@@ -76,7 +83,7 @@ public final class KV {
         Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
 
         if (cntOnly) {
-            long cnt = count(start, end, limit, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+            long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
             res.setCount(cnt);
         } else {
             Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
@@ -119,19 +126,19 @@ public final class KV {
         long lease = req.getLease();
         long rev;
 
-        if (reqKey != null && reqKey.size() > 0 && reqVal != null && reqVal.size() > 0) {
+        if (!reqKey.isEmpty() && !reqVal.isEmpty()) {
+            // TODO: atomicity
             rev = ctx.incrementRevision();
 
-            // TODO: versioning
-            // TODO: atomicity
             Key k = new Key(reqKey.toByteArray());
-            Value curVal = cache.get(k);
+            Value val = getWithoutPayload(k);
+            long ver = val == null ? 1 : val.version();
+            long crtRev = val == null ? rev : val.createRevision();
 
-            Value v = curVal == null
-                ? new Value(reqVal.toByteArray(), rev, rev, 1, lease)
-                : new Value(reqVal.toByteArray(), curVal.createRevision(), rev, 1, lease);
+            HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
 
-            cache.put(k, v);
+            cache.put(k, new Value(hVal, rev));
+            histCache.put(new HistoricalKey(k, rev), hVal);
         } else
             rev = ctx.revision();
 
@@ -139,18 +146,40 @@ public final class KV {
     }
 
     public Rpc.DeleteRangeResponse deleteRange(Rpc.DeleteRangeRequest req) {
+        // key is the first key to delete in the range.
         ByteString reqKey = req.getKey();
+
+        // range_end is the key following the last key to delete for the range [key, range_end).
+        // If range_end is not given, the range is defined to contain only the key argument.
+        // If range_end is one bit larger than the given key, then the range is all the keys
+        // with the prefix (the given key).
+        // If range_end is '\0', the range is all keys greater than or equal to the key argument.
+        ByteString rangeEnd = req.getRangeEnd();
+
         long rev;
         long cnt = 0;
 
         if (reqKey != null && reqKey.size() > 0) {
+            // TODO: atomicity
             rev = ctx.incrementRevision();
 
-            // TODO: versioning
-            Key k = new Key(reqKey.toByteArray());
+            Key start = new Key(reqKey.toByteArray());
+            Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
 
-            if (cache.remove(k))
-                cnt++;
+            if (!start.isZero() && end == null) {
+                // Optimization for single key removal
+                if (cache.remove(start)) {
+                    putTombstone(start, rev);
+                    cnt++;
+                }
+            } else {
+                Set<Key> keyList = keysInRange(start, end);
+
+                cache.removeAll(keyList);
+                putTombstone(keyList, rev);
+
+                cnt = keyList.size();
+            }
         } else
             rev = ctx.revision();
 
@@ -185,6 +214,29 @@ public final class KV {
         return Rpc.CompactionResponse.newBuilder().setHeader(Context.getHeader(ctx.revision())).build();
     }
 
+    private void putTombstone(Key start, long rev) {
+        histCache.put(new HistoricalKey(start, rev), new HistoricalValue(null, 0, 0, 0));
+    }
+
+    private void putTombstone(Set<Key> keys, long rev) {
+        histCache.putAll(keys.stream().collect(Collectors.toMap(
+            k -> new HistoricalKey(k, rev),
+            k -> new HistoricalValue(null, 0, 0, 0)
+        )));
+    }
+
+    private Value getWithoutPayload(Key k) {
+        // Use invoke to avoid transferring payload
+        return cache.invoke(k, (kv, ignored) -> {
+            if (kv.getKey() == null)
+                return null;
+
+            Value v = kv.getValue();
+
+            return new Value(null, v.createRevision(), v.modifyRevision(), v.version(), v.lease());
+        });
+    }
+
     private static int compare(byte[] lhs, byte[] rhs) {
         if (lhs == rhs)
             return 0;
@@ -209,118 +261,136 @@ public final class KV {
             int operation = req.getResultValue();
             int target = req.getTargetValue();
 
-            // TODO: versioning
             Key k = new Key(key.toByteArray());
-            Value v = cache.get(k);
 
             switch (operation) {
                 case Rpc.Compare.CompareResult.EQUAL_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            // TODO: versioning
-                            long lhs = v == null ? 0 : 1;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            Value v = cache.get(k);
                             byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return Arrays.equals(lhs, rhs);
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            // TODO: leasing
-                            return false;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.lease();
+                            long rhs = req.getLease();
+                            return lhs == rhs;
                     }
                 case Rpc.Compare.CompareResult.GREATER_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            // TODO: versioning
-                            long lhs = v == null ? 0 : 1;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            Value v = cache.get(k);
                             byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return compare(lhs, rhs) > 0;
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            // TODO: leasing
-                            return false;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.lease();
+                            long rhs = req.getLease();
+                            return lhs > rhs;
                     }
                 case Rpc.Compare.CompareResult.LESS_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            // TODO: versioning
-                            long lhs = v == null ? 0 : 1;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs < rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs < rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            Value v = cache.get(k);
                             byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return compare(lhs, rhs) < 0;
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            // TODO: leasing
-                            return false;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.lease();
+                            long rhs = req.getLease();
+                            return lhs < rhs;
                     }
                 case Rpc.Compare.CompareResult.NOT_EQUAL_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            // TODO: versioning
-                            long lhs = v == null ? 0 : 1;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
+                            Value v = getWithoutPayload(k);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.VALUE_VALUE: {
+                            Value v = cache.get(k);
                             byte[] lhs = v == null ? null : v.value();
                             byte[] rhs = req.getValue().toByteArray();
                             return !Arrays.equals(lhs, rhs);
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            // TODO: leasing
-                            return false;
+                            Value v = getWithoutPayload(k);
+                            long lhs = v == null ? 0 : v.lease();
+                            long rhs = req.getLease();
+                            return lhs != rhs;
                     }
             }
         }
@@ -351,15 +421,17 @@ public final class KV {
         Rpc.RangeRequest.SortOrder sortOrder,
         Rpc.RangeRequest.SortTarget sortTarget
     ) {
-        if (!noPayload && allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
+        if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
             if (!start.isZero() && end == null) {
-                // Optimization for getting single entry with payload without filtering
-                Value v = cache.get(start);
+                // Optimization for getting single entry without filtering
+                Value v = noPayload ? getWithoutPayload(start) : cache.get(start);
 
                 return v == null
                     ? Collections.emptyList()
                     : Collections.singletonList(new SimpleImmutableEntry<>(start, v));
-            } else if (start.isZero() && end.isZero() && limit <= 0 && sortOrder == Rpc.RangeRequest.SortOrder.NONE) {
+            } else if (!noPayload && start.isZero() && end.isZero() && limit <= 0 &&
+                sortOrder == Rpc.RangeRequest.SortOrder.NONE
+            ) {
                 // Optimization for getting all entries with payload without filtering, sorting and limit
                 return cache.query(new ScanQuery<Key, Value>()).getAll().stream()
                     .map(e -> new SimpleImmutableEntry<>(e.getKey(), e.getValue()))
@@ -367,77 +439,171 @@ public final class KV {
             }
         }
 
+        Collection<SimpleImmutableEntry<Key, Value>> res = new ArrayList<>();
+        Collection<Object> sqlArgs = new ArrayList<>();
+
+        String tbl = rev <= 0 ? "ETCD_KV" : "ETCD_KV_HISTORY";
+
         Collection<String> flds = Arrays.asList("CREATE_REVISION", "MODIFY_REVISION", "VERSION", "LEASE", "KEY");
 
         if (!noPayload)
             flds.add("VALUE");
 
-        String sqlFilter = sqlFilter(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+        String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
+        String sqlSort = sqlSort(sortOrder, sortTarget);
+        String sqlLimit = limit <= 0 ? "" : "LIMIT " + limit;
 
+        StringBuilder sql = new StringBuilder("SELECT ").append(String.join(", ", flds)).append(" FROM ").append(tbl);
 
+        if (!sqlFilter.isEmpty())
+            sql.append("\n").append(sqlFilter);
 
-        SqlFieldsQuery q = new SqlFieldsQuery(
-            "SELECT CREATE_REVISION, MODIFY_REVISION, VERSION, LEASE FROM ETCD_KV WHERE KEY = ?"
-        ).setArgs(k);
+        if (!sqlSort.isEmpty())
+            sql.append("\n").append(sqlSort);
 
-        List<List<?>> tbl = cache.query(q).getAll();
+        if (!sqlLimit.isEmpty())
+            sql.append("\n").append(sqlLimit);
 
-        if (tbl.isEmpty())
-            return null;
+        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs))) {
+            Iterator<?> it = row.iterator();
 
-        Iterator<?> it = tbl.iterator().next().iterator();
+            long crtRev = (Long) it.next();
+            long modRev = (Long) it.next();
+            long ver = (Long) it.next();
+            long lease = (Long) it.next();
+            byte[] k = (byte[]) it.next();
+            byte[] v = noPayload ? null : (byte[]) it.next();
 
-        return new Value(null, (Long)it.next(), (Long)it.next(), (Long)it.next(), (Long)it.next());
+            res.add(new SimpleImmutableEntry<>(new Key(k), new Value(v, crtRev, modRev, ver, lease)));
+        }
+
+        return res;
     }
 
-    private long count(
-        Key start,
-        Key end,
-        long limit,
-        long rev,
-        long minModRev,
-        long maxModRev,
-        long minCrtRev,
-        long maxCrtRev
-    ) {
-        if (limit <= 0)
-            return 0;
-
+    private long count(Key start, Key end, long rev, long minModRev, long maxModRev, long minCrtRev, long maxCrtRev) {
         if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
             if (!start.isZero() && end == null)
                 // Optimization for a popular case to check single entry without filtering
                 return cache.containsKey(start) ? 1 : 0;
-            else if (start.isZero() && end.isZero()) {
+            else if (start.isZero() && end.isZero())
                 // Optimization for counting all entries without filtering
-                return Math.min(cache.size(), limit);
-            }
+                return cache.size();
         }
+
+        Collection<Object> sqlArgs = new ArrayList<>();
+
+        String tbl = rev <= 0 ? "ETCD_KV" : "ETCD_KV_HISTORY";
+
+        String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
+
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM").append(tbl);
+
+        if (!sqlFilter.isEmpty())
+            sql.append("\n").append(sqlFilter);
+
+        List<List<?>> res = cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs)).getAll();
+
+        return (Long) res.iterator().next().iterator().next();
+    }
+
+    private Set<Key> keysInRange(Key start, Key end) {
+        Collection<Object> sqlArgs = new ArrayList<>();
+        Collection<String> filterList = new ArrayList<>();
+
+        if (!start.isZero()) {
+            filterList.add("KEY " + (end == null ? "=" : ">=") + " ?");
+            sqlArgs.add(start);
+        }
+
+        if (end != null && !end.isZero()) {
+            filterList.add("KEY < ?");
+            sqlArgs.add(end);
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT KEY FROM ETCD_KV");
+
+        if (!filterList.isEmpty())
+            sql.append("\n").append(String.join(" AND ", filterList));
+
+        Set<Key> res = new HashSet<>();
+
+        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs)))
+            res.add(new Key((byte[]) row.iterator().next()));
+
+        return res;
     }
 
     private static boolean allZeroOrNegative(long n1, long n2, long n3, long n4, long n5) {
         return n1 <= 0 && n2 <= 0 && n3 <= 0 && n4 <= 0 && n5 <= 0;
     }
 
-    private static SimpleImmutableEntry<String, Collection<Object>> String sqlFilter(
+    private static String sqlFilter(
+        Collection<Object> sqlArgs,
         Key start,
         Key end,
-        long rev,
         long minModRev,
         long maxModRev,
         long minCrtRev,
         long maxCrtRev
     ) {
-        Collection<String> filters = new ArrayList<>();
-        Collection<Object> args = new ArrayList<>();
+        Collection<String> filterList = new ArrayList<>();
 
         if (!start.isZero()) {
-            filters.add("KEY " + end == null ? "=" : ">=" + " ?\n");
-            args.add(start);
+            filterList.add("KEY " + (end == null ? "=" : ">=") + " ?");
+            sqlArgs.add(start);
         }
 
         if (end != null && !end.isZero()) {
-            filters.add("VALUE < ?");
-            args.add(end);
+            filterList.add("KEY < ?");
+            sqlArgs.add(end);
         }
+
+        if (minModRev > 0) {
+            filterList.add("MODIFY_REVISION >= ?");
+            sqlArgs.add(minModRev);
+        }
+
+        if (maxModRev > 0) {
+            filterList.add("MODIFY_REVISION <= ?");
+            sqlArgs.add(maxModRev);
+        }
+
+        if (minCrtRev > 0) {
+            filterList.add("CREATE_REVISION >= ?");
+            sqlArgs.add(minCrtRev);
+        }
+
+        if (maxCrtRev > 0) {
+            filterList.add("CREATE_REVISION <= ?");
+            sqlArgs.add(maxCrtRev);
+        }
+
+        return String.join(" AND ", filterList);
+    }
+
+    private String sqlSort(Rpc.RangeRequest.SortOrder sortOrder, Rpc.RangeRequest.SortTarget sortTarget) {
+        if (sortOrder == Rpc.RangeRequest.SortOrder.NONE)
+            return "";
+
+        String target;
+        switch (sortTarget) {
+            case KEY:
+                target = "KEY";
+                break;
+            case VERSION:
+                target = "VERSION";
+                break;
+            case CREATE:
+                target = "CREATE_REVISION";
+                break;
+            case MOD:
+                target = "MODIFY_REVISION";
+                break;
+            default:
+                target = "VALUE";
+                break;
+        }
+
+        return sortOrder == Rpc.RangeRequest.SortOrder.ASCEND ? target : target + " DESC";
     }
 }
