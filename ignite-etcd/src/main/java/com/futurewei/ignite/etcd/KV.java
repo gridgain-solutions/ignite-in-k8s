@@ -228,10 +228,10 @@ public final class KV {
     private Value getWithoutPayload(Key k) {
         // Use invoke to avoid transferring payload
         return cache.invoke(k, (kv, ignored) -> {
-            if (kv.getKey() == null)
-                return null;
-
             Value v = kv.getValue();
+
+            if (v == null)
+                return null;
 
             return new Value(null, v.createRevision(), v.modifyRevision(), v.version(), v.lease());
         });
