@@ -29,12 +29,12 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(Rpc.LeaseKeepAliveRequest req) {
-                res.onNext(impl.leaseKeepAlive(req));
+                impl.leaseKeepAlive(req, res::onNext);
             }
 
             @Override
-            public void onError(Throwable t) {
-                // TODO: error handling
+            public void onError(Throwable ignored) {
+                // Nothing to cancel
             }
 
             @Override

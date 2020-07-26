@@ -11,6 +11,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import javax.cache.Cache;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class Lease {
     private final IgniteCache<Long, Long> cache;
@@ -59,7 +60,7 @@ public final class Lease {
         return Rpc.LeaseRevokeResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision())).build();
     }
 
-    public Rpc.LeaseKeepAliveResponse leaseKeepAlive(Rpc.LeaseKeepAliveRequest req) {
+    public void leaseKeepAlive(Rpc.LeaseKeepAliveRequest req, Consumer<Rpc.LeaseKeepAliveResponse> resConsumer) {
         long id = req.getID();
 
         Rpc.LeaseKeepAliveResponse.Builder res = Rpc.LeaseKeepAliveResponse.newBuilder()
@@ -69,11 +70,10 @@ public final class Lease {
 
         if (grantedTtl != null) {
             // TODO: KV lease management
-
             res.setID(id).setTTL(grantedTtl);
         }
 
-        return res.build();
+        resConsumer.accept(res.build());
     }
 
     public Rpc.LeaseTimeToLiveResponse leaseTimeToLive(Rpc.LeaseTimeToLiveRequest req) {

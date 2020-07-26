@@ -1,10 +1,14 @@
 package com.futurewei.ignite.etcd;
 
+import java.io.Serializable;
+
 /**
  * {@link Value} without {@link Value#modifyRevision()} since {@link HistoricalValue} is always paired with
  * {@link HistoricalKey} that already has {@link HistoricalKey#modifyRevision()}.
  */
-public class HistoricalValue {
+public class HistoricalValue implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final byte[] val;
     private final long crtRev;
     private final long ver;

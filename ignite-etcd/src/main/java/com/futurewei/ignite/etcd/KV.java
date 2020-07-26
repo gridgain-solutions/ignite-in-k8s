@@ -360,6 +360,8 @@ public final class KV {
             byte[] k = (byte[]) it.next();
             byte[] v = noPayload ? null : (byte[]) it.next();
 
+            // TODO: remove deleted entries from historical query
+
             res.add(new SimpleImmutableEntry<>(new Key(k), new Value(v, crtRev, modRev, ver, lease)));
         }
 
@@ -437,7 +439,7 @@ public final class KV {
 
         // the upper bound on the requested range [key, range_end).
         // If range_end is '\0', the range is all keys >= key.
-        // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
+        // TODO: If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
         // then the range request gets all keys prefixed with key.
         // If both key and range_end are '\0', then the range request returns all keys.
         ByteString rangeEnd = req.getRangeEnd();
@@ -556,7 +558,7 @@ public final class KV {
 
         // range_end is the key following the last key to delete for the range [key, range_end).
         // If range_end is not given, the range is defined to contain only the key argument.
-        // If range_end is one bit larger than the given key, then the range is all the keys
+        // TODO: If range_end is one bit larger than the given key, then the range is all the keys
         // with the prefix (the given key).
         // If range_end is '\0', the range is all keys greater than or equal to the key argument.
         ByteString rangeEnd = req.getRangeEnd();
