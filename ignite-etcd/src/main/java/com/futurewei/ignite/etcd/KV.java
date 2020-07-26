@@ -7,6 +7,12 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.lang.IgniteCallable;
+import org.apache.ignite.resources.IgniteInstanceResource;
+import org.apache.ignite.transactions.Transaction;
+import org.apache.ignite.transactions.TransactionConcurrency;
+import org.apache.ignite.transactions.TransactionIsolation;
+import org.apache.ignite.transactions.TransactionOptimisticException;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -17,201 +23,41 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class KV {
+    private final Ignite ignite;
     private final IgniteCache<Key, Value> cache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
-    private final Context ctx;
+    private final EtcdCluster ctx;
 
     public KV(Ignite ignite, String cacheName, String histCacheName) {
+        this.ignite = ignite;
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
         histCache = ignite.getOrCreateCache(CacheConfig.KVHistory(histCacheName));
-        ctx = new Context(ignite);
+        ctx = new EtcdCluster(ignite);
     }
 
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
-        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
-
-        // the first key for the range. If range_end is not given, the request only looks up key.
-        ByteString key = req.getKey();
-
-        // the upper bound on the requested range [key, range_end).
-        // If range_end is '\0', the range is all keys >= key.
-        // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
-        // then the range request gets all keys prefixed with key.
-        // If both key and range_end are '\0', then the range request returns all keys.
-        ByteString rangeEnd = req.getRangeEnd();
-
-        // when set returns only the count of the keys in the range.
-        boolean cntOnly = req.getCountOnly();
-
-        // when set returns only the keys and not the values.
-        boolean keysOnly = req.getKeysOnly();
-
-        // a limit on the number of keys returned for the request. When limit is set to 0, it is treated as no limit.
-        long limit = req.getLimit();
-
-        // revision is the point-in-time of the key-value store to use for the range.
-        // If revision is less or equal to zero, the range is over the newest key-value store.
-        // If the revision has been compacted, ErrCompacted is returned as a response.
-        long rev = req.getRevision();
-
-        // sort_order is the order for returned sorted results.
-        Rpc.RangeRequest.SortOrder sortOrder = req.getSortOrder();
-
-        // sort_target is the key-value field to use for sorting.
-        Rpc.RangeRequest.SortTarget sortTarget = req.getSortTarget();
-
-        // the lower bound for returned key mod revisions; all keys with lesser mod revisions will
-        // be filtered away.
-        long minModRev = req.getMinModRevision();
-
-        // the upper bound for returned key mod revisions; all keys with greater mod revisions
-        // will be filtered away.
-        long maxModRev = req.getMaxModRevision();
-
-        // the lower bound for returned key create revisions; all keys with lesser create revisions
-        // will be filtered away.
-        long minCrtRev = req.getMinCreateRevision();
-
-        // the upper bound for returned key create revisions; all keys with greater create revisions
-        // will be filtered away.
-        long maxCrtRev = req.getMaxCreateRevision();
-
-        Key start = key.isEmpty() ? null : new Key(key.toByteArray());
-        Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
-
-        if (cntOnly) {
-            long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
-            res.setCount(cnt);
-        } else {
-            Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
-                start,
-                end,
-                limit,
-                rev,
-                minModRev,
-                maxModRev,
-                minCrtRev,
-                maxCrtRev,
-                keysOnly,
-                sortOrder,
-                sortTarget
-            );
-
-            for (SimpleImmutableEntry<Key, Value> entry : kvs) {
-                Value v = entry.getValue();
-                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                    .setKey(ByteString.copyFrom(entry.getKey().key()))
-                    .setVersion(v.version())
-                    .setCreateRevision(v.createRevision())
-                    .setModRevision(v.modifyRevision());
-
-                if (!keysOnly)
-                    kv.setValue(ByteString.copyFrom(v.value()));
-
-                res.addKvs(kv);
-            }
-
-            res.setCount(kvs.size());
-        }
-
-        return res.build();
+        return rangeNonTx(req, false);
     }
 
     public Rpc.PutResponse put(Rpc.PutRequest req) {
-        ByteString reqKey = req.getKey();
-        ByteString reqVal = req.getValue();
-        long lease = req.getLease();
-        long rev;
-
-        if (!reqKey.isEmpty() && !reqVal.isEmpty()) {
-            // TODO: atomicity
-            rev = ctx.incrementRevision();
-
-            Key k = new Key(reqKey.toByteArray());
-            Value val = getWithoutPayload(k);
-            long ver = val == null ? 1 : val.version();
-            long crtRev = val == null ? rev : val.createRevision();
-
-            HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
-
-            cache.put(k, new Value(hVal, rev));
-            histCache.put(new HistoricalKey(k, rev), hVal);
-        } else
-            rev = ctx.revision();
-
-        return Rpc.PutResponse.newBuilder().setHeader(Context.getHeader(rev)).build();
+        return transaction(3000, 1, () -> putNonTx(req));
     }
 
     public Rpc.DeleteRangeResponse deleteRange(Rpc.DeleteRangeRequest req) {
-        // key is the first key to delete in the range.
-        ByteString reqKey = req.getKey();
-
-        // range_end is the key following the last key to delete for the range [key, range_end).
-        // If range_end is not given, the range is defined to contain only the key argument.
-        // If range_end is one bit larger than the given key, then the range is all the keys
-        // with the prefix (the given key).
-        // If range_end is '\0', the range is all keys greater than or equal to the key argument.
-        ByteString rangeEnd = req.getRangeEnd();
-
-        long rev;
-        long cnt = 0;
-
-        if (reqKey != null && reqKey.size() > 0) {
-            // TODO: atomicity
-            rev = ctx.incrementRevision();
-
-            Key start = new Key(reqKey.toByteArray());
-            Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
-
-            if (!start.isZero() && end == null) {
-                // Optimization for single key removal
-                if (cache.remove(start)) {
-                    putTombstone(start, rev);
-                    cnt++;
-                }
-            } else {
-                Set<Key> keyList = keysInRange(start, end);
-
-                cache.removeAll(keyList);
-                putTombstone(keyList, rev);
-
-                cnt = keyList.size();
-            }
-        } else
-            rev = ctx.revision();
-
-        return Rpc.DeleteRangeResponse.newBuilder().setHeader(Context.getHeader(rev)).setDeleted(cnt).build();
+        return transaction(10000, 0, () -> deleteRangeNonTx(req));
     }
 
     public Rpc.TxnResponse txn(Rpc.TxnRequest req) {
-        List<Rpc.Compare> cmpReqList = req.getCompareList();
-        Collection<Rpc.ResponseOp> resList = null;
-        boolean ok = false;
-
-        if (cmpReqList.size() > 0) {
-            // TODO: atomicity
-            ok = cmpReqList.stream().allMatch(this::check);
-
-            List<Rpc.RequestOp> reqList = ok ? req.getSuccessList() : req.getFailureList();
-
-            resList = reqList.stream().map(this::exec).collect(Collectors.toList());
-        }
-
-        Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
-            .setHeader(Context.getHeader(ctx.revision()))
-            .setSucceeded(ok);
-
-        if (resList != null)
-            res.addAllResponses(resList);
-
-        return res.build();
+        return transaction(60000, 0, () -> txnNonTx(req));
     }
 
     public Rpc.CompactionResponse compact(Rpc.CompactionRequest req) {
-        return Rpc.CompactionResponse.newBuilder().setHeader(Context.getHeader(ctx.revision())).build();
+        // TODO: compaction
+        return Rpc.CompactionResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision())).build();
     }
 
     private void putTombstone(Key start, long rev) {
@@ -225,16 +71,46 @@ public final class KV {
         )));
     }
 
-    private Value getWithoutPayload(Key k) {
-        // Use invoke to avoid transferring payload
-        return cache.invoke(k, (kv, ignored) -> {
-            Value v = kv.getValue();
+    /**
+     * Optimization to get Value without payload since payloads in Kubernetes can be large.
+     * @param k Key
+     * @param txModifiesKey {@code true} if this method is called in a transaction modifying the key.
+     * @return Value associated with the key without {@link Value#value()}
+     */
+    private Value getWithoutPayload(Key k, boolean txModifiesKey) {
+        // Do not use Cache.get(k) to avoid transferring Value's payload.
+        // IgniteCache#invoke(k) causes subsequent Cache#put(k) to fail with IgniteCheckedException("Failed to enlist
+        // write value for key (cannot have update value in transaction after EntryProcessor is applied)").
+        // Thus, use IgniteCache#invoke(k) only if there is not Cache#put(k) in the same transaction. Otherwise use
+        // IgniteCompute#affiniyCall(k).
+        // TODO: why does IgniteCache#invoke(k) fail for read-only closures?
+        if (txModifiesKey) {
+            String cacheName = cache.getName();
 
-            if (v == null)
-                return null;
+            return ignite.compute().affinityCall(cacheName, k, new IgniteCallable<>() {
+                @IgniteInstanceResource
+                private Ignite ignite;
 
-            return new Value(null, v.createRevision(), v.modifyRevision(), v.version(), v.lease());
-        });
+                @Override
+                public Value call() {
+                    IgniteCache<Key, Value> cache = ignite.cache(cacheName);
+                    Value v = cache.get(k);
+
+                    return v == null
+                        ? null
+                        : new Value(null, v.createRevision(), v.modifyRevision(), v.version(), v.lease());
+                }
+            });
+        } else {
+            return cache.invoke(k, (kv, ignored) -> {
+                Value v = kv.getValue();
+
+                if (v == null)
+                    return null;
+
+                return new Value(null, v.createRevision(), v.modifyRevision(), v.version(), v.lease());
+            });
+        }
     }
 
     private static int compare(byte[] lhs, byte[] rhs) {
@@ -267,19 +143,19 @@ public final class KV {
                 case Rpc.Compare.CompareResult.EQUAL_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs == rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs == rhs;
@@ -291,7 +167,7 @@ public final class KV {
                             return Arrays.equals(lhs, rhs);
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.lease();
                             long rhs = req.getLease();
                             return lhs == rhs;
@@ -299,19 +175,19 @@ public final class KV {
                 case Rpc.Compare.CompareResult.GREATER_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs > rhs;
@@ -323,7 +199,7 @@ public final class KV {
                             return compare(lhs, rhs) > 0;
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.lease();
                             long rhs = req.getLease();
                             return lhs > rhs;
@@ -331,19 +207,19 @@ public final class KV {
                 case Rpc.Compare.CompareResult.LESS_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs < rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs > rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs < rhs;
@@ -355,7 +231,7 @@ public final class KV {
                             return compare(lhs, rhs) < 0;
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.lease();
                             long rhs = req.getLease();
                             return lhs < rhs;
@@ -363,19 +239,19 @@ public final class KV {
                 case Rpc.Compare.CompareResult.NOT_EQUAL_VALUE:
                     switch (target) {
                         case Rpc.Compare.CompareTarget.VERSION_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.version();
                             long rhs = req.getVersion();
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.CREATE_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.createRevision();
                             long rhs = req.getCreateRevision();
                             return lhs != rhs;
                         }
                         case Rpc.Compare.CompareTarget.MOD_VALUE: {
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.modifyRevision();
                             long rhs = req.getModRevision();
                             return lhs != rhs;
@@ -387,7 +263,7 @@ public final class KV {
                             return !Arrays.equals(lhs, rhs);
                         }
                         case Rpc.Compare.CompareTarget.LEASE_VALUE:
-                            Value v = getWithoutPayload(k);
+                            Value v = getWithoutPayload(k, true);
                             long lhs = v == null ? 0 : v.lease();
                             long rhs = req.getLease();
                             return lhs != rhs;
@@ -400,15 +276,20 @@ public final class KV {
 
     private Rpc.ResponseOp exec(Rpc.RequestOp req) {
         if (req.hasRequestRange())
-            return Rpc.ResponseOp.newBuilder().setResponseRange(range(req.getRequestRange())).build();
+            return Rpc.ResponseOp.newBuilder().setResponseRange(rangeNonTx(req.getRequestRange(), true)).build();
         if (req.hasRequestPut())
-            return Rpc.ResponseOp.newBuilder().setResponsePut(put(req.getRequestPut())).build();
+            return Rpc.ResponseOp.newBuilder().setResponsePut(putNonTx(req.getRequestPut())).build();
         if (req.hasRequestDeleteRange())
-            return Rpc.ResponseOp.newBuilder().setResponseDeleteRange(deleteRange(req.getRequestDeleteRange())).build();
-        return Rpc.ResponseOp.newBuilder().setResponseTxn(txn(req.getRequestTxn())).build();
+            return Rpc.ResponseOp.newBuilder().setResponseDeleteRange(deleteRangeNonTx(req.getRequestDeleteRange()))
+                .build();
+        return Rpc.ResponseOp.newBuilder().setResponseTxn(txnNonTx(req.getRequestTxn())).build();
     }
 
+    /**
+     * @param txModifiesKey See {@link #getWithoutPayload(Key, boolean)}.
+     */
     private Collection<SimpleImmutableEntry<Key, Value>> range(
+        boolean txModifiesKey,
         Key start,
         Key end,
         long limit,
@@ -424,7 +305,7 @@ public final class KV {
         if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
             if (!start.isZero() && end == null) {
                 // Optimization for getting single entry without filtering
-                Value v = noPayload ? getWithoutPayload(start) : cache.get(start);
+                Value v = noPayload ? getWithoutPayload(start, txModifiesKey) : cache.get(start);
 
                 return v == null
                     ? Collections.emptyList()
@@ -543,6 +424,199 @@ public final class KV {
         return res;
     }
 
+    /**
+     * Non-transactional {@link #range(Rpc.RangeRequest)}.
+     *
+     * @param txModifiesKey See {@link #getWithoutPayload(Key, boolean)}.
+     */
+    public Rpc.RangeResponse rangeNonTx(Rpc.RangeRequest req, boolean txModifiesKey) {
+        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision()));
+
+        // the first key for the range. If range_end is not given, the request only looks up key.
+        ByteString key = req.getKey();
+
+        // the upper bound on the requested range [key, range_end).
+        // If range_end is '\0', the range is all keys >= key.
+        // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
+        // then the range request gets all keys prefixed with key.
+        // If both key and range_end are '\0', then the range request returns all keys.
+        ByteString rangeEnd = req.getRangeEnd();
+
+        // when set returns only the count of the keys in the range.
+        boolean cntOnly = req.getCountOnly();
+
+        // when set returns only the keys and not the values.
+        boolean keysOnly = req.getKeysOnly();
+
+        // a limit on the number of keys returned for the request. When limit is set to 0, it is treated as no limit.
+        long limit = req.getLimit();
+
+        // revision is the point-in-time of the key-value store to use for the range.
+        // If revision is less or equal to zero, the range is over the newest key-value store.
+        // If the revision has been compacted, ErrCompacted is returned as a response.
+        long rev = req.getRevision();
+
+        // sort_order is the order for returned sorted results.
+        Rpc.RangeRequest.SortOrder sortOrder = req.getSortOrder();
+
+        // sort_target is the key-value field to use for sorting.
+        Rpc.RangeRequest.SortTarget sortTarget = req.getSortTarget();
+
+        // the lower bound for returned key mod revisions; all keys with lesser mod revisions will
+        // be filtered away.
+        long minModRev = req.getMinModRevision();
+
+        // the upper bound for returned key mod revisions; all keys with greater mod revisions
+        // will be filtered away.
+        long maxModRev = req.getMaxModRevision();
+
+        // the lower bound for returned key create revisions; all keys with lesser create revisions
+        // will be filtered away.
+        long minCrtRev = req.getMinCreateRevision();
+
+        // the upper bound for returned key create revisions; all keys with greater create revisions
+        // will be filtered away.
+        long maxCrtRev = req.getMaxCreateRevision();
+
+        Key start = key.isEmpty() ? null : new Key(key.toByteArray());
+        Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
+
+        if (cntOnly) {
+            long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+            res.setCount(cnt);
+        } else {
+            Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
+                txModifiesKey,
+                start,
+                end,
+                limit,
+                rev,
+                minModRev,
+                maxModRev,
+                minCrtRev,
+                maxCrtRev,
+                keysOnly,
+                sortOrder,
+                sortTarget
+            );
+
+            for (SimpleImmutableEntry<Key, Value> entry : kvs) {
+                Value v = entry.getValue();
+                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
+                    .setKey(ByteString.copyFrom(entry.getKey().key()))
+                    .setVersion(v.version())
+                    .setCreateRevision(v.createRevision())
+                    .setModRevision(v.modifyRevision());
+
+                if (!keysOnly)
+                    kv.setValue(ByteString.copyFrom(v.value()));
+
+                res.addKvs(kv);
+            }
+
+            res.setCount(kvs.size());
+        }
+
+        return res.build();
+    }
+
+    /**
+     * Non-transactional {@link #put(Rpc.PutRequest)}.
+     */
+    private Rpc.PutResponse putNonTx(Rpc.PutRequest req) {
+        ByteString reqKey = req.getKey();
+        ByteString reqVal = req.getValue();
+        long lease = req.getLease();
+        long rev;
+
+        if (!reqKey.isEmpty() && !reqVal.isEmpty()) {
+            rev = ctx.incrementRevision();
+
+            Key k = new Key(reqKey.toByteArray());
+            Value val = getWithoutPayload(k, true);
+            long ver = val == null ? 1 : val.version();
+            long crtRev = val == null ? rev : val.createRevision();
+
+            HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
+
+            cache.put(k, new Value(hVal, rev));
+            histCache.put(new HistoricalKey(k, rev), hVal);
+        } else
+            rev = ctx.revision();
+
+        return Rpc.PutResponse.newBuilder().setHeader(EtcdCluster.getHeader(rev)).build();
+    }
+
+    /**
+     * Non-transactional {@link #deleteRange(Rpc.DeleteRangeRequest)}.
+     */
+    private Rpc.DeleteRangeResponse deleteRangeNonTx(Rpc.DeleteRangeRequest req) {
+        // key is the first key to delete in the range.
+        ByteString reqKey = req.getKey();
+
+        // range_end is the key following the last key to delete for the range [key, range_end).
+        // If range_end is not given, the range is defined to contain only the key argument.
+        // If range_end is one bit larger than the given key, then the range is all the keys
+        // with the prefix (the given key).
+        // If range_end is '\0', the range is all keys greater than or equal to the key argument.
+        ByteString rangeEnd = req.getRangeEnd();
+
+        long rev;
+        long cnt = 0;
+
+        if (reqKey != null && reqKey.size() > 0) {
+            rev = ctx.incrementRevision();
+
+            Key start = new Key(reqKey.toByteArray());
+            Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
+
+            if (!start.isZero() && end == null) {
+                // Optimization for single key removal
+                if (cache.remove(start)) {
+                    putTombstone(start, rev);
+                    cnt++;
+                }
+            } else {
+                Set<Key> keyList = keysInRange(start, end);
+
+                cache.removeAll(keyList);
+                putTombstone(keyList, rev);
+
+                cnt = keyList.size();
+            }
+        } else
+            rev = ctx.revision();
+
+        return Rpc.DeleteRangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(rev)).setDeleted(cnt).build();
+    }
+
+    /**
+     * Non-transactional {@link #txn(Rpc.TxnRequest)}.
+     */
+    private Rpc.TxnResponse txnNonTx(Rpc.TxnRequest req) {
+        List<Rpc.Compare> cmpReqList = req.getCompareList();
+        Collection<Rpc.ResponseOp> resList = null;
+        boolean ok = false;
+
+        if (cmpReqList.size() > 0) {
+            // TODO: SQL used for some range queries is not transactional
+            ok = cmpReqList.stream().allMatch(this::check);
+
+            List<Rpc.RequestOp> reqList = ok ? req.getSuccessList() : req.getFailureList();
+
+            resList = reqList.stream().map(this::exec).collect(Collectors.toList());
+        }
+
+        Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
+            .setHeader(EtcdCluster.getHeader(ctx.revision()))
+            .setSucceeded(ok);
+
+        if (resList != null)
+            res.addAllResponses(resList);
+
+        return res.build();
+    }
+
     private static boolean allZeroOrNegative(long n1, long n2, long n3, long n4, long n5) {
         return n1 <= 0 && n2 <= 0 && n3 <= 0 && n4 <= 0 && n5 <= 0;
     }
@@ -615,5 +689,22 @@ public final class KV {
         }
 
         return sortOrder == Rpc.RangeRequest.SortOrder.ASCEND ? target : target + " DESC";
+    }
+
+    private <R> R transaction(long timeout, int size, Supplier<R> work) {
+        while (true) {
+            try (Transaction tx = ignite.transactions().txStart(
+                TransactionConcurrency.OPTIMISTIC,
+                TransactionIsolation.READ_COMMITTED,
+                timeout,
+                size
+            )) {
+                R res = work.get();
+                tx.commit();
+                return res;
+            } catch (TransactionOptimisticException ignored) {
+                // Retry optimistic transaction
+            }
+        }
     }
 }

@@ -17,16 +17,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class Watch {
     private final Cache<Key, Value> cache;
-    private final Context ctx;
+    private final EtcdCluster ctx;
     private final Map<Long, Watcher> watchers = new ConcurrentHashMap<>();
 
     public Watch(Ignite ignite, String cacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
-        ctx = new Context(ignite);
+        ctx = new EtcdCluster(ignite);
     }
 
     public Rpc.WatchResponse watch(Rpc.WatchRequest req) throws InterruptedException {
-        Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
+        Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision()));
 
         if (req.hasCreateRequest()) {
             Rpc.WatchCreateRequest startReq = req.getCreateRequest();
