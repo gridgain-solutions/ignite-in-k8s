@@ -5,6 +5,9 @@ import etcdserverpb.WatchGrpc;
 import io.grpc.stub.StreamObserver;
 import org.apache.ignite.Ignite;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public final class Watch extends WatchGrpc.WatchImplBase {
     private final com.futurewei.ignite.etcd.Watch impl;
 
@@ -13,20 +16,21 @@ public final class Watch extends WatchGrpc.WatchImplBase {
     }
 
     @Override
-    public StreamObserver<Rpc.WatchRequest> watch(StreamObserver<Rpc.WatchResponse> res) {
+    public StreamObserver<Rpc.WatchRequest> watch(final StreamObserver<Rpc.WatchResponse> res) {
         return new StreamObserver<>() {
+            private final Set<Runnable> cancellations = new HashSet<>();
+
             @Override
             public void onNext(Rpc.WatchRequest req) {
-                try {
-                    res.onNext(impl.watch(req));
-                } catch (InterruptedException e) {
-                    // TODO: error handling
-                }
+                cancellations.add(impl.watch(req, res::onNext));
             }
 
             @Override
-            public void onError(Throwable t) {
-                // TODO: error handling
+            public void onError(Throwable ignored) {
+                for (Runnable cancel : cancellations)
+                    cancel.run();
+
+                cancellations.clear();
             }
 
             @Override
