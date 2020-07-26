@@ -3,9 +3,14 @@ package com.futurewei.ignite.etcd.grpc;
 import etcdserverpb.MaintenanceGrpc;
 import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
+import org.apache.ignite.Ignite;
 
 public class Maintenance extends MaintenanceGrpc.MaintenanceImplBase {
-    private final com.futurewei.ignite.etcd.Maintenance impl = new com.futurewei.ignite.etcd.Maintenance();
+    private final com.futurewei.ignite.etcd.Maintenance impl;
+
+    public Maintenance(Ignite ignite) {
+        impl = new com.futurewei.ignite.etcd.Maintenance(ignite);
+    }
 
     @Override
     public void alarm(Rpc.AlarmRequest req, StreamObserver<Rpc.AlarmResponse> res) {

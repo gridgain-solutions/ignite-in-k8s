@@ -1,8 +1,14 @@
 package com.futurewei.ignite.etcd;
 
 import etcdserverpb.Rpc;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteAtomicLong;
 
 final class Context {
+    Context(Ignite ignite) {
+        rev = ignite.atomicLong("etcd_rev", 1, true);
+    }
+
     static Rpc.ResponseHeader getHeader(long rev) {
         return Rpc.ResponseHeader.newBuilder()
                 .setClusterId(111L)
@@ -12,14 +18,13 @@ final class Context {
                 .build();
     }
 
-    static long revision() {
-        return rev;
+    long revision() {
+        return rev.get();
     }
 
-    static long incrementRevision() {
-        return ++rev;
+    long incrementRevision() {
+        return rev.incrementAndGet();
     }
 
-    // TODO: atomic revision
-    private static long rev = 1;
+    private final IgniteAtomicLong rev;
 }

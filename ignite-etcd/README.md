@@ -7,4 +7,4 @@ Self-hosted gRPC server with embedded Ignite server node exposing
 `gradle installDist`
 
 ## Run
-`./build/install/ignite-etcd/bin/ignite-etcd --server.port=2379`
+Usage: `./build/install/ignite-etcd/bin/ignite-etcd -h`

@@ -1,19 +1,20 @@
 package com.futurewei.ignite.etcd;
 
-final class Key {
+public class Key {
     private final byte[] key;
-    private final long ver;
 
-    Key(byte[] key, long ver) {
+    Key(byte[] key) {
         this.key = key;
-        this.ver = ver;
     }
 
+    /**
+     * @return key in bytes. An empty key is not allowed.
+     */
     byte[] key() {
         return key;
     }
 
-    long version() {
-        return ver;
+    boolean isZero() {
+        return key[0] == 0;
     }
 }

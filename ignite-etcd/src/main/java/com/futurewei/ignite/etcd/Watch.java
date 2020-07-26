@@ -17,14 +17,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class Watch {
     private final Cache<Key, Value> cache;
+    private final Context ctx;
     private final Map<Long, Watcher> watchers = new ConcurrentHashMap<>();
 
     public Watch(Ignite ignite, String cacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
+        ctx = new Context(ignite);
     }
 
     public Rpc.WatchResponse watch(Rpc.WatchRequest req) throws InterruptedException {
-        Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder().setHeader(Context.getHeader(Context.revision()));
+        Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder().setHeader(Context.getHeader(ctx.revision()));
 
         if (req.hasCreateRequest()) {
             Rpc.WatchCreateRequest startReq = req.getCreateRequest();
@@ -62,22 +64,22 @@ public final class Watch {
 
         public Collection<Kv.Event> await() throws InterruptedException {
             // TODO: proper Watch implementation
-            final ByteString BSK = req.getKey();
-            final Key K = new Key(BSK.toByteArray(), 1);
+            final ByteString bsk = req.getKey();
+            final Key k = new Key (bsk.toByteArray());
             final AtomicReference<InterruptedException> err = new AtomicReference<>();
             final Collection<Kv.Event> evtList = new ArrayList<>();
 
             Executors.newSingleThreadExecutor().submit(() -> {
                 try {
                     while (!done.await(1000, TimeUnit.MILLISECONDS)) {
-                        Value v = cache.get(K);
+                        Value v = cache.get(k);
                         if (v != null) {
                             Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                                    .setKey(BSK)
-                                    .setVersion(K.version())
-                                    .setValue(ByteString.copyFrom(v.value()))
-                                    .setCreateRevision(v.createRevision())
-                                    .setModRevision(v.modifyRevision());
+                                .setKey(bsk)
+                                .setVersion(v.version())
+                                .setValue(ByteString.copyFrom(v.value()))
+                                .setCreateRevision(v.createRevision())
+                                .setModRevision(v.modifyRevision());
                             evtList.add(Kv.Event.newBuilder().setType(Kv.Event.EventType.PUT).setKv(kv).build());
 
                             done.countDown();

@@ -3,9 +3,14 @@ package com.futurewei.ignite.etcd.grpc;
 import etcdserverpb.ClusterGrpc;
 import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
+import org.apache.ignite.Ignite;
 
 public final class Cluster extends ClusterGrpc.ClusterImplBase {
-    private final com.futurewei.ignite.etcd.Cluster impl = new com.futurewei.ignite.etcd.Cluster();
+    private final com.futurewei.ignite.etcd.Cluster impl;
+
+    public Cluster(Ignite ignite) {
+        impl = new com.futurewei.ignite.etcd.Cluster(ignite);
+    }
 
     @Override
     public void memberAdd(Rpc.MemberAddRequest req, StreamObserver<Rpc.MemberAddResponse> res) {
