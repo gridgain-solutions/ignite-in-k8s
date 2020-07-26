@@ -53,7 +53,7 @@ public final class CacheConfig {
                     .addQueryField("crtRev", long.class.getName(), "CREATE_REVISION")
                     .addQueryField("ver", long.class.getName(), "VERSION")
                     .addQueryField("lease", long.class.getName(), null)
-                    .setKeyFieldName("key")
+                    .setKeyFields(Set.of("key"))
                     .setIndexes(Collections.singletonList(new QueryIndex("lease")))
             ));
     }

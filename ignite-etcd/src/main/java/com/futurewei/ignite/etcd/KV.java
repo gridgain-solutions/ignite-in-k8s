@@ -444,27 +444,32 @@ public final class KV {
 
         String tbl = rev <= 0 ? "ETCD_KV" : "ETCD_KV_HISTORY";
 
-        Collection<String> flds = Arrays.asList("CREATE_REVISION", "MODIFY_REVISION", "VERSION", "LEASE", "KEY");
-
-        if (!noPayload)
-            flds.add("VALUE");
+        Collection<String> flds = noPayload
+            ? Arrays.asList("CREATE_REVISION", "MODIFY_REVISION", "VERSION", "LEASE", "KEY")
+            : Arrays.asList("CREATE_REVISION", "MODIFY_REVISION", "VERSION", "LEASE", "KEY", "VALUE");
 
         String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
         String sqlSort = sqlSort(sortOrder, sortTarget);
-        String sqlLimit = limit <= 0 ? "" : "LIMIT " + limit;
 
         StringBuilder sql = new StringBuilder("SELECT ").append(String.join(", ", flds)).append(" FROM ").append(tbl);
 
         if (!sqlFilter.isEmpty())
-            sql.append("\n").append(sqlFilter);
+            sql.append("\nWHERE ").append(sqlFilter);
+
+        if (rev > 0) {
+            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION <= ?");
+            sqlArgs.add(rev);
+        }
 
         if (!sqlSort.isEmpty())
-            sql.append("\n").append(sqlSort);
+            sql.append("\nORDER BY ").append(sqlSort);
 
-        if (!sqlLimit.isEmpty())
-            sql.append("\n").append(sqlLimit);
+        if (limit > 0) {
+            sql.append("\nLIMIT ?");
+            sqlArgs.add(limit);
+        }
 
-        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs))) {
+        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray()))) {
             Iterator<?> it = row.iterator();
 
             long crtRev = (Long) it.next();
@@ -499,9 +504,14 @@ public final class KV {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM").append(tbl);
 
         if (!sqlFilter.isEmpty())
-            sql.append("\n").append(sqlFilter);
+            sql.append("\nWHERE ").append(sqlFilter);
 
-        List<List<?>> res = cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs)).getAll();
+        if (rev > 0) {
+            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION <= ?");
+            sqlArgs.add(rev);
+        }
+
+        List<List<?>> res = cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray())).getAll();
 
         return (Long) res.iterator().next().iterator().next();
     }
@@ -527,7 +537,7 @@ public final class KV {
 
         Set<Key> res = new HashSet<>();
 
-        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs)))
+        for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray())))
             res.add(new Key((byte[]) row.iterator().next()));
 
         return res;
