@@ -2,7 +2,6 @@ package com.futurewei.ignite.etcd;
 
 import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
-import mvccpb.Kv;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.ScanQuery;
@@ -385,7 +384,7 @@ public final class KV {
 
         String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
 
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM").append(tbl);
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM ").append(tbl);
 
         if (!sqlFilter.isEmpty())
             sql.append("\nWHERE ").append(sqlFilter);
@@ -503,7 +502,8 @@ public final class KV {
                 sortTarget
             );
 
-            res.addAllKvs(kvs.stream().map(e -> toPB(e, keysOnly)).collect(Collectors.toList())).setCount(kvs.size());
+            res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
+                .setCount(kvs.size());
         }
 
         return res.build();
@@ -523,7 +523,7 @@ public final class KV {
 
             Key k = new Key(reqKey.toByteArray());
             Value val = getWithoutPayload(k, true);
-            long ver = val == null ? 1 : val.version();
+            long ver = val == null ? 1 : val.version() + 1;
             long crtRev = val == null ? rev : val.createRevision();
 
             HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
@@ -597,7 +597,7 @@ public final class KV {
         }
 
         if (prevVals != null)
-            res.addAllPrevKvs(prevVals.entrySet().stream().map(KV::toPB).collect(Collectors.toList()));
+            res.addAllPrevKvs(prevVals.entrySet().stream().map(PBFormat::kv).collect(Collectors.toList()));
 
         return res.setDeleted(cnt).build();
     }
@@ -718,23 +718,5 @@ public final class KV {
                 // Retry optimistic transaction
             }
         }
-    }
-
-    private static Kv.KeyValue toPB(Map.Entry<Key, Value> entry) {
-        return toPB(entry, false);
-    }
-
-    private static Kv.KeyValue toPB(Map.Entry<Key, Value> entry, boolean noPayload) {
-        Value v = entry.getValue();
-        Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-            .setKey(ByteString.copyFrom(entry.getKey().key()))
-            .setVersion(v.version())
-            .setCreateRevision(v.createRevision())
-            .setModRevision(v.modifyRevision());
-
-        if (!noPayload)
-            kv.setValue(ByteString.copyFrom(v.value()));
-
-        return kv.build();
     }
 }

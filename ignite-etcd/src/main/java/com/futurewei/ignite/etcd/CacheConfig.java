@@ -16,17 +16,23 @@ public final class CacheConfig {
     /**
      * Users may define a KV cache in the external configuration and specify the cache name as a parameter for
      * ignite-etcd. The user-defined cache must conform to this specification.
+     * TODO: analyze queries, add indexes
      */
     public static String KVSpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL +
-        "\nSQL: TABLE ETCD_KV (KEY BINARY, LEASE BIGINT)" +
+        "\nSQL: TABLE ETCD_KV (KEY BINARY, VALUE BINARY, MODIFY_REVISION BIGINT, CREATE_REVISION BIGINT, " +
+        "VERSION BIGINT, LEASE BIGINT)" +
         "\nPRIMARY KEY(KEY)" +
         "\nINDEX(LEASE)";
 
     /**
      * Users may define a KV History cache in the external configuration and specify the cache name as a parameter for
      * ignite-etcd. The user-defined cache must conform to this specification.
+     * TODO: analyze queries, add indexes
      */
-    public static String KVHistorySpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL;
+    public static String KVHistorySpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL +
+        "\nSQL: TABLE ETCD_KV_HISTORY (KEY BINARY, VALUE BINARY, MODIFY_REVISION BIGINT, CREATE_REVISION BIGINT, " +
+        "VERSION BIGINT, LEASE BIGINT)" +
+        "\nPRIMARY KEY(KEY, MODIFY_REVISION)";
 
     /**
      * Users may define a Lease cache in the external configuration and specify the cache name as a parameter for

@@ -13,11 +13,13 @@ import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.EventType;
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -84,6 +86,8 @@ public final class Watch {
         private final Rpc.WatchCreateRequest req;
         private final Consumer<Rpc.WatchResponse> resConsumer;
         private final CountDownLatch done;
+        private final ExecutorService watchExec = Executors.newSingleThreadExecutor();
+        private final ExecutorService reportExec = Executors.newSingleThreadExecutor();
 
         public Watcher(
             EtcdCluster ctx,
@@ -97,11 +101,13 @@ public final class Watch {
             this.resConsumer = resConsumer;
             done = new CountDownLatch(1);
 
-            Executors.newSingleThreadExecutor().submit(this::run);
+            watchExec.execute(this::run);
         }
 
         public void cancel() {
             done.countDown();
+            reportExec.shutdownNow();
+            watchExec.shutdownNow();
         }
 
         private void run() {
@@ -128,7 +134,7 @@ public final class Watch {
 
             ContinuousQuery<Key, Value> q = new ContinuousQuery<>();
 
-            q.setLocalListener(this::report);
+            q.setLocalListener(evts -> reportExec.execute(() -> report(evts)));
 
             q.setRemoteFilterFactory((Factory<CacheEntryEventFilter<Key, Value>>) () ->
                 (CacheEntryEventFilter<Key, Value>) e -> {
@@ -158,38 +164,55 @@ public final class Watch {
                 }
             );
 
-            try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
-                done.await();
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (done.getCount() > 0) {
+                try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
+                    done.await();
+                } catch (Exception e) {
+                    // OK to get interrupted on cancellation
+                    if (done.getCount() > 0)
+                        e.printStackTrace();
+                }
             }
         }
 
         private void report(Iterable<CacheEntryEvent<? extends Key, ? extends Value>> evts) {
+            // If prev_kv is set, created watcher gets the previous KV before the event happens.
+            // If the previous KV is already compacted, nothing will be returned.
+            boolean prevKv = req.getPrevKv();
+
             Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder()
                 .setHeader(EtcdCluster.getHeader(ctx.revision()))
                 .setWatchId(req.getWatchId());
 
             for (CacheEntryEvent<? extends Key, ? extends Value> evt : evts) {
-                Key k = evt.getKey();
-                Value v = evt.getValue();
                 EventType t = evt.getEventType();
-
-                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                    .setKey(ByteString.copyFrom(k.key()))
-                    .setVersion(v.version())
-                    .setValue(ByteString.copyFrom(v.value()))
-                    .setCreateRevision(v.createRevision())
-                    .setModRevision(v.modifyRevision());
-
                 Kv.Event.EventType kvt = t == EventType.REMOVED || t == EventType.EXPIRED
                     ? Kv.Event.EventType.DELETE
                     : Kv.Event.EventType.PUT;
 
-                res.addEvents(Kv.Event.newBuilder().setType(kvt).setKv(kv).build());
+                Kv.Event.Builder kve = Kv.Event.newBuilder()
+                    .setType(kvt)
+                    .setKv(PBFormat.kv(new AbstractMap.SimpleImmutableEntry<>(evt.getKey(), evt.getValue())));
+
+                if (prevKv) {
+                    Value oldVal = evt.getOldValue();
+
+                    if (oldVal != null)
+                        kve.setPrevKv(PBFormat.kv(new AbstractMap.SimpleImmutableEntry<>(evt.getKey(), oldVal)));
+                }
+
+                res.addEvents(kve.build());
             }
 
-            resConsumer.accept(res.build());
+            if (done.getCount() > 0) {
+                try {
+                    resConsumer.accept(res.build());
+                } catch (Exception e) {
+                    // OK to get interrupted on cancellation
+                    if (done.getCount() > 0)
+                        e.printStackTrace();
+                }
+            }
         }
     }
 }
