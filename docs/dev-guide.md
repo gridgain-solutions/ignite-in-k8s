@@ -6,11 +6,10 @@
   - Export `GOPATH` environment variable explicitly.
   
 - Kubernetes source code
-  - `git clone https://github.com/kubernetes/kubernetes`
+  - `git clone --recurse-submodules https://github.com/kubernetes/kubernetes`
   - Make `K8S_REPO` environment variable point to the kubernetes repo. For example: 
     ```export K8S_REPO=`pwd`/kubernetes```
   - `cd $K8S_REPO; git checkout v1.18.5`
-  - ```ln -s `dirname $K8S_REPO` $GOPATH/src/k8s.io```
   
 - Build Kubernetes: `cd $K8S_REPO; make -j 4`
 
@@ -48,8 +47,12 @@
     - All keys wih history: `etcdctl get "" --from-key` 
   - With `curl`:
     - `curl -s -d '{"key": [0], "range_end": [0], "max_mod_revision": 7}' -X POST http://localhost:2379/v3/kv/range`
-  - With `kubectl` (`alias kubectl="$K8S_REPO/_output/bin/kubectl"`)
+  - With `kubectl` (`alias kubectl="$K8S_REPO/_output/bin/kubectl"`):
     - `kubectl get nodes`
     - `kubectl apply -f busybox-sleep.yaml`    
     - `kubectl get pods`
     - `kubectl logs busybox-sleep`
+  - With Kubernetes integration tests:
+    - Comment out line `kube::etcd::start` in `$K8S_REPO/hack/make-rules/test-integration.sh`
+    - Run `ignite-etcdkubelet` 
+    - Example of running `pods` integration tests: `make test-integration WHAT=./test/integration/pods GOFLAGS="-v"`

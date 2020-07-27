@@ -134,7 +134,15 @@ public final class Watch {
 
             ContinuousQuery<Key, Value> q = new ContinuousQuery<>();
 
-            q.setLocalListener(evts -> reportExec.execute(() -> report(evts)));
+            q.setLocalListener(evts -> {
+                try {
+                    reportExec.execute(() -> report(evts));
+                } catch (Exception e) {
+                    // OK to get interrupted on cancellation
+                    if (done.getCount() > 0)
+                        e.printStackTrace();
+                }
+            });
 
             q.setRemoteFilterFactory((Factory<CacheEntryEventFilter<Key, Value>>) () ->
                 (CacheEntryEventFilter<Key, Value>) e -> {
