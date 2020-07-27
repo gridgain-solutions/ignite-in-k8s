@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -405,18 +406,18 @@ public final class KV {
 
         if (!start.isZero()) {
             filterList.add("KEY " + (end == null ? "=" : ">=") + " ?");
-            sqlArgs.add(start);
+            sqlArgs.add(start.key());
         }
 
         if (end != null && !end.isZero()) {
             filterList.add("KEY < ?");
-            sqlArgs.add(end);
+            sqlArgs.add(end.key());
         }
 
         StringBuilder sql = new StringBuilder("SELECT KEY FROM ETCD_KV");
 
         if (!filterList.isEmpty())
-            sql.append("\n").append(String.join(" AND ", filterList));
+            sql.append("\nWHERE ").append(String.join(" AND ", filterList));
 
         Set<Key> res = new HashSet<>();
 
@@ -502,21 +503,7 @@ public final class KV {
                 sortTarget
             );
 
-            for (SimpleImmutableEntry<Key, Value> entry : kvs) {
-                Value v = entry.getValue();
-                Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
-                    .setKey(ByteString.copyFrom(entry.getKey().key()))
-                    .setVersion(v.version())
-                    .setCreateRevision(v.createRevision())
-                    .setModRevision(v.modifyRevision());
-
-                if (!keysOnly)
-                    kv.setValue(ByteString.copyFrom(v.value()));
-
-                res.addKvs(kv);
-            }
-
-            res.setCount(kvs.size());
+            res.addAllKvs(kvs.stream().map(e -> toPB(e, keysOnly)).collect(Collectors.toList())).setCount(kvs.size());
         }
 
         return res.build();
@@ -554,7 +541,7 @@ public final class KV {
      */
     private Rpc.DeleteRangeResponse deleteRangeNonTx(Rpc.DeleteRangeRequest req) {
         // key is the first key to delete in the range.
-        ByteString reqKey = req.getKey();
+        ByteString key = req.getKey();
 
         // range_end is the key following the last key to delete for the range [key, range_end).
         // If range_end is not given, the range is defined to contain only the key argument.
@@ -563,33 +550,56 @@ public final class KV {
         // If range_end is '\0', the range is all keys greater than or equal to the key argument.
         ByteString rangeEnd = req.getRangeEnd();
 
-        long rev;
+        // If prev_kv is set, etcd gets the previous key-value pairs before deleting it.
+        // The previous key-value pairs will be returned in the delete response.
+        boolean prevKv = req.getPrevKv();
+
+
+        long rev = ctx.incrementRevision();
         long cnt = 0;
+        Map<Key, Value> prevVals = null;
 
-        if (reqKey != null && reqKey.size() > 0) {
-            rev = ctx.incrementRevision();
+        Rpc.DeleteRangeResponse.Builder res = Rpc.DeleteRangeResponse.newBuilder()
+            .setHeader(EtcdCluster.getHeader(rev));
 
-            Key start = new Key(reqKey.toByteArray());
-            Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
+        Key start = new Key(key.toByteArray());
+        Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
 
-            if (!start.isZero() && end == null) {
-                // Optimization for single key removal
-                if (cache.remove(start)) {
-                    putTombstone(start, rev);
-                    cnt++;
+        if (!start.isZero() && end == null) {
+            // Optimization for single key removal
+            boolean removed = false;
+
+            if (prevKv) {
+                Value v = cache.getAndRemove(start);
+                if (v != null) {
+                    removed = true;
+                    prevVals = Collections.singletonMap(start, v);
                 }
-            } else {
-                Set<Key> keyList = keysInRange(start, end);
+            } else
+                removed = cache.remove(start);
 
-                cache.removeAll(keyList);
-                putTombstone(keyList, rev);
-
-                cnt = keyList.size();
+            if (removed) {
+                putTombstone(start, rev);
+                cnt++;
             }
-        } else
-            rev = ctx.revision();
+        } else {
+            Set<Key> keys = keysInRange(start, end);
 
-        return Rpc.DeleteRangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(rev)).setDeleted(cnt).build();
+            if (!keys.isEmpty()) {
+                if (prevKv)
+                    prevVals = cache.getAll(keys);
+
+                cache.removeAll(keys);
+                putTombstone(keys, rev);
+            }
+
+            cnt = keys.size();
+        }
+
+        if (prevVals != null)
+            res.addAllPrevKvs(prevVals.entrySet().stream().map(KV::toPB).collect(Collectors.toList()));
+
+        return res.setDeleted(cnt).build();
     }
 
     /**
@@ -636,12 +646,12 @@ public final class KV {
 
         if (!start.isZero()) {
             filterList.add("KEY " + (end == null ? "=" : ">=") + " ?");
-            sqlArgs.add(start);
+            sqlArgs.add(start.key());
         }
 
         if (end != null && !end.isZero()) {
             filterList.add("KEY < ?");
-            sqlArgs.add(end);
+            sqlArgs.add(end.key());
         }
 
         if (minModRev > 0) {
@@ -708,5 +718,23 @@ public final class KV {
                 // Retry optimistic transaction
             }
         }
+    }
+
+    private static Kv.KeyValue toPB(Map.Entry<Key, Value> entry) {
+        return toPB(entry, false);
+    }
+
+    private static Kv.KeyValue toPB(Map.Entry<Key, Value> entry, boolean noPayload) {
+        Value v = entry.getValue();
+        Kv.KeyValue.Builder kv = Kv.KeyValue.newBuilder()
+            .setKey(ByteString.copyFrom(entry.getKey().key()))
+            .setVersion(v.version())
+            .setCreateRevision(v.createRevision())
+            .setModRevision(v.modifyRevision());
+
+        if (!noPayload)
+            kv.setValue(ByteString.copyFrom(v.value()));
+
+        return kv.build();
     }
 }
