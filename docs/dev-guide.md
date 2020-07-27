@@ -26,12 +26,14 @@
     - API Server: `$K8S_REPO/_output/bin/kube-apiserver --etcd-servers=http://127.0.0.1:2379 --service-cluster-ip-range=127.0.0.1/24 --storage-media-type=application/json`
     - Scheduler: `$K8S_REPO/_output/bin/kube-scheduler --master=http://127.0.0.1:8080`
     - Controller Manager: `$K8S_REPO/_output/bin/kube-controller-manager --master=http://127.0.0.1:8080 --service-account-private-key-file=/var/run/kubernetes/apiserver.key`
-    - Configuration: 
-      - `$K8S_REPO/_output/bin/kubectl config --kubeconfig=local set-cluster local --server=http://127.0.0.1:8080`
-      - `$K8S_REPO/_output/bin/kubectl config --kubeconfig=local set-credentials ignite --username=ignite --password=ignite`
-      - `$K8S_REPO/_output/bin/kubectl config --kubeconfig=local set-context ignite-local --cluster=local --namespace=default --user=ignite`
-      - `$K8S_REPO/_output/bin/kubectl config --kubeconfig=local use-context ignite-local`
-      - `$K8S_REPO/_output/bin/kubectl config --kubeconfig=local view > $HOME/.kube/local-config`
+    - Configuration (`alias kubectl="$K8S_REPO/_output/bin/kubectl"`):
+      ```shell script
+      kubectl config --kubeconfig=local set-cluster local --server=http://127.0.0.1:8080; \
+      kubectl config --kubeconfig=local set-credentials ignite --username=ignite --password=ignite; \
+      kubectl config --kubeconfig=local set-context ignite-local --cluster=local --namespace=default --user=ignite; \
+      kubectl config --kubeconfig=local use-context ignite-local; \
+      kubectl config --kubeconfig=local view > $HOME/.kube/local-config
+      ``` 
   - Node 1
     - Work directories: 
       - ```sudo mkdir -p /var/lib/kubelet; sudo chown `whoami`:`whoami` /var/lib/kubelet```
