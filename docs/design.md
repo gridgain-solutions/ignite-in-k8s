@@ -1,6 +1,26 @@
 # Ignite-to-ETCD Shim Layer
 ## Goals
-
+The goal of this project is to asses a possibility of replacing ETCD with Ignite as a storage layer for Kubernetes 
+APIserver. Based on the previous attempts to provide a pluggable storage for Kubernetes, the solution must meet the
+following functional and non-functional criteria:
+#### Reliable Watch
+Reliable watch will be implemented as a combination of multi-version KV storage built on top of Ignite native KV 
+storage and Ignite Continuous Queries feature. The implementation details are described in the KV and Watch service 
+description.
+#### Snapshot
+While it is not clear whether the Snapshot functionality is used by Kubernetes, the feature implementation is 
+straightforward by freezing the MVCC compaction and exporting all values up to the given revision.
+#### Pagination
+Ignite provides pagination for SQL queries and Continuous queries. On top of that, pagination will be implemented in the
+Shim layer based on the revision counter.
+#### Multi-object transactions & Optimistic concurrency
+Ignite natively supports multi-key cross-cache transactions and both Optimistic and Pessimistic concurrency for 
+transactions.
+#### Recursive multi-object watch
+Ignite continuous queries provide callback which is fired on each object modification. The necessary level of object 
+introspection and filtering will be implemented in the Shim Layer.
+#### Multiple indexes support
+Ignite provides secondary indices and SQL interface for querying data using these indices.
 ## Non-goals
 Provide an identical set of functionality as in the ETCD project. The replacement may be further adjusted and optimized
 for specific scenarios run by the Kubernetes API server component.
@@ -57,7 +77,7 @@ We assume the following requirements for the ``mod_revision`` by Kubernetes:
  * ``mod_revision`` is monotonic, but not necesserily contiguous, i.e. for two consequtive updates ``mod_revision`` can
  be incremented by more than 1
  * ``mod_revision`` provides externally-consistent global ordering of all updates performed by the KV service. This 
- requirement may be relaxed as described in [3].
+ requirement most likely may be relaxed.
     
 ## ☑ Watch Service (REQUIRED)
 Watch service allows requester to receive updates applied to the given key range starting a given version assigned by
@@ -220,9 +240,9 @@ seems to be straightforward.
     }
 
 # Implementing watch version in Shim
-## Maintaining update version
-The shim layer will introduce a counter to assign a version for each update. The possible mechanics for the
-counter updates are (the applicability of each mechanic is the subject of investigation during the PoC phase):
+## Maintaining revisions
+The shim layer will introduce a counter to assign the ``mod_revision`` for each update. The possible mechanics for the
+counter updates are (the applicability of each mechanic is the subject of further investigation):
  * Shim implements counter as an Ignite key which is updated on each KV service operation. This implementation provides
  strict correspondence to the original ETCD implementation, but induces contention on the counter which limits the 
  overall throughput of updates to KV store. We consider this implementation to be sufficient for the PoC stage.
@@ -232,7 +252,8 @@ counter updates are (the applicability of each mechanic is the subject of invest
  oracle crash, the next update timestamp will be reloaded from the stored upper-bound, leaving a 'gap' in the versions
  stored in the KV service: there will be a range of versions for which there are no corresponding updates stored in the
  KV service.
- * Use a hybrid approach combining local timestamps, node identifiers and local counters as described in [3].
+ * Use a hybrid approach combining local timestamps, node identifiers and local counters. In this case, a 3-tuple is 
+ encoded in the 64-bit value having (from MSB to LSB) local timestamp, local update counter and node identifier. 
  
 The key-value update will be executed as
 
@@ -293,11 +314,19 @@ field of ``HistoricalKey`` class as an affinity key and grouping close versions 
 in buckets of 10 elements (essentially, using ``version / 10`` as an affinity key) we can send the query only
 to ``(versionHigh - versionLow) / 10`` cluster nodes, instead of a broadcast query. This approach, however, should be
 carefully benchmarked as in most cases all watch agents will likely be reading the same versions range resulting in 
-hitting the same nodes anyway.   
+hitting the same nodes anyway.
+
+# Preliminary Test Results and Possible Issues
+* Current implementation of the range queries uses SQL, which is not transactional in Ignite. This will require 
+additional synchronization/filtering to coordinate Shim transaction request and range queries.
+* The strategy of scalable ``mod_revision`` assignment is still unclear. A single ``mod_revision`` oracle does not look
+like a viable solution since it becomes a bottleneck for the whole system. The most promising soltion is the 
+compound timestamp-based ``mod_revision``.
+* Authentication and cluster services are left unimplemented. We assume no technical risks in implementing the 
+authentication service and assume no need to implement the management service.
+* Some integration tests fail. The root cause breakdown is as follows.
 
 # Links
 [1] https://github.com/etcd-io/etcd/blob/release-3.4/etcdserver/etcdserverpb/rpc.proto
 
 [2] http://notes.stephenholiday.com/Percolator.pdf
-
-[3] https://github.com/futurewei-cloud/arktos/pull/293/files
