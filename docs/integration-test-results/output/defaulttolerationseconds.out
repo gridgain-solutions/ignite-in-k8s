@@ -1,0 +1,19 @@
+warning: ignoring symlink /home/ec2-user/kubernetes/_output/local/go/src/k8s.io/kubernetes
+go: warning: "k8s.io/kubernetes/vendor/github.com/go-bindata/go-bindata/..." matched no packages
++++ [0804 16:51:53] Skipping etcd start
++++ [0804 16:51:53] Running integration test cases
+go tool asm: fork/exec /usr/local/go/pkg/tool/linux_amd64/asm: resource temporarily unavailable
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+warning: ignoring symlink /home/ec2-user/kubernetes/_output/local/go/src/k8s.io/kubernetes
+go: warning: "k8s.io/kubernetes/vendor/github.com/go-bindata/go-bindata/..." matched no packages
++++ [0804 16:51:55] Running tests without code coverage
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+go tool cgo: fork/exec /usr/local/go/pkg/tool/linux_amd64/cgo: resource temporarily unavailable
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+go tool compile: fork/exec /usr/local/go/pkg/tool/linux_amd64/compile: resource temporarily unavailable
+make[1]: *** [test] Error 1
+!!! [0804 16:51:56] Call tree:
+!!! [0804 16:51:56]  1: hack/make-rules/test-integration.sh:98 runTests(...)
+make: *** [test-integration] Error 1
