@@ -13,7 +13,7 @@
   
 - Build Kubernetes: `cd $K8S_REPO; make -j 4`
 
-- Build `ignite-etcd`: `cd ignite-etcd; gradle installDist`
+- Build `ignite-etcd`: `cd ignite-etcd; ./gradlew installDist`
 
 - Run Everything Locally 
   - Control Plane
@@ -54,5 +54,5 @@
     - `kubectl logs busybox-sleep`
   - With Kubernetes integration tests:
     - Comment out line `kube::etcd::start` in `$K8S_REPO/hack/make-rules/test-integration.sh`
-    - Run `ignite-etcdkubelet` 
+    - Run `ignite-etcd` 
     - Example of running `pods` integration tests: `make test-integration WHAT=./test/integration/pods GOFLAGS="-v"`
