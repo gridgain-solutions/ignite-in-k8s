@@ -9,8 +9,6 @@ The following tests failed during the integration testing run:
 * `certificates`
 * `master/TestDynamicAudit`
 
-Full test logs are located here: [output](output)
-
 ## `apiserver/TestAPIListChunking`
 The test fails with the error below. Most likely, this is related to pagination which is not implemented in `ignite-etcd` yet. We expect the test to pass once the functionality is added (planned for later phases of the project).
 
@@ -34,3 +32,4 @@ However, there are still 5 tests which fail for reasons not yet understood:
 * `apiserver/TestAPICRDProtobuf`
 * `apiserver/TestTransform`
 * `master/TestDynamicAudit`
+
