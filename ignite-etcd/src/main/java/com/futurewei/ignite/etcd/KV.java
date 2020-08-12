@@ -27,6 +27,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class KV {
+    /** Override transaction timeout (e.g. for debugging). */
+    private static final int TX_TIMEOUT = Integer.parseInt(System.getProperty("TX_TIMEOUT", "0"));
+
     private final Ignite ignite;
     private final IgniteCache<Key, Value> cache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
@@ -708,7 +711,7 @@ public final class KV {
             try (Transaction tx = ignite.transactions().txStart(
                 TransactionConcurrency.OPTIMISTIC,
                 TransactionIsolation.READ_COMMITTED,
-                timeout,
+                TX_TIMEOUT > 0 ? TX_TIMEOUT : timeout,
                 size
             )) {
                 R res = work.get();

@@ -20,7 +20,7 @@
     - Work directories: 
       - ```sudo mkdir -p /var/run/kubernetes; sudo chown `whoami`:`whoami` /var/run/kubernetes```
     - Etcd: 
-      - ignite-etcd: `ignite-etcd/build/install/ignite-etcd/bin/ignite-etcd --server.port=2379`
+      - ignite-etcd: `ignite-etcd/build/install/ignite-etcd/bin/ignite-etcd --server.port=2379 --ignite.config=docs/ignite-server.xml`
       - OR native etcd: `$K8S_REPO/third_party/etcd/etcd --listen-client-urls=http://127.0.0.1:2379 --advertise-client-urls=http://127.0.0.1:2379 --data-dir=/tmp/default.etcd` 
     - API Server: `$K8S_REPO/_output/bin/kube-apiserver --etcd-servers=http://127.0.0.1:2379 --service-cluster-ip-range=127.0.0.1/24 --storage-media-type=application/json`
     - Scheduler: `$K8S_REPO/_output/bin/kube-scheduler --master=http://127.0.0.1:8080`
@@ -55,4 +55,16 @@
   - With Kubernetes integration tests:
     - Comment out line `kube::etcd::start` in `$K8S_REPO/hack/make-rules/test-integration.sh`
     - Run `ignite-etcd` 
-    - Example of running `pods` integration tests: `make test-integration WHAT=./test/integration/pods GOFLAGS="-v"`
+    - `cd $K8S_REPO` 
+    - Example of running all the `pods` integration tests:  
+      `make test-integration WHAT=./test/integration/pods GOFLAGS="-v"`
+    - Example of running single test `TestPodUpdateActiveDeadlineSeconds`:  
+      `make test-integration WHAT=./test/integration/pods GOFLAGS="-v" KUBE_TEST_ARGS="-run ^TestPodUpdateActiveDeadlineSeconds$"`
+
+- Problems and Solutions
+  - **Problem**: Kubernetes integration tests fail with `context deadline exceeded` error in the log, for example:  
+    `error in bringing up the master: problem initializing API group "autoscaling" : context deadline exceeded`
+    **Solution**: If there are `socket: too many open files` errors preceding the `context deadline exceeded` error 
+    in the log then check max number of files that a process can open. Increase it if it is less than 10K.              
+  - **Problem**: `ignite-etcd` failing with `OutOfMemoryError`
+    **Solution**: Increase ignite-etcd JVM heap size (`export IGNITE_ETCD_OPTS=-Xmx16g` before running `ignite-etcd`)
