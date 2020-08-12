@@ -6,7 +6,7 @@ Etcd Java API auto-generated from [protobuf specs](https://github.com/etcd-io/et
 A **development-only** "hack" to enable Intellij IDEA indexing of the generated classes is to make a symlink from 
 the `main` source set to the generated `java` sources:
 ```shell script
-gradle build
+./gradlew build
 cd src/main
 ln -s ../../build/generated/source/proto/main/java java
 cd java/etcdserverpb
