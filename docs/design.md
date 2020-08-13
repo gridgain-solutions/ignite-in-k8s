@@ -324,7 +324,7 @@ like a viable solution since it becomes a bottleneck for the whole system. The m
 compound timestamp-based ``mod_revision``.
 * Authentication and cluster services are left unimplemented. We assume no technical risks in implementing the 
 authentication service and assume no need to implement the management service.
-* Some integration tests fail. The root cause breakdown can be found here: [Kubernetes Integration Test Report](/integration-test-report.md)
+* Some integration tests fail. The root cause breakdown can be found here: [Kubernetes Integration Test Report](integration-test-report.md)
 
 # Links
 [1] https://github.com/etcd-io/etcd/blob/release-3.4/etcdserver/etcdserverpb/rpc.proto
