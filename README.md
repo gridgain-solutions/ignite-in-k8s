@@ -6,4 +6,4 @@ Ignite as etcd replacement in Kubernetes
 - [etcd-proto](etcd-proto/README.md): auto-generated etcd Java API
 - [ignite-etcd](ignite-etcd/README.md): self-hosted gRPC server with embedded Ignite server node exposing 
   etcd-compatible REST endpoints.  
-- [Phase 0 integration tests](docs/integration-test-results/failures.md): Report and analysis of failed tests 
+- [Phase 0 integration tests](docs/integration-test-report.md): Report and analysis of integration tests 
