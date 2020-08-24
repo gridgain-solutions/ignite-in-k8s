@@ -14,20 +14,28 @@ import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.EventType;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public final class Watch {
     private static final Runnable nop = () -> {};
     private final IgniteCache<Key, Value> cache;
     private final EtcdCluster ctx;
-    private final Map<Long, Watcher> watchers = new ConcurrentHashMap<>();
+    private final Map<WatcherId, Watcher> watchers = new ConcurrentHashMap<>();
 
     public Watch(Ignite ignite, String cacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
@@ -41,12 +49,22 @@ public final class Watch {
      * @param resConsumer Accepts the event notifications
      * @return Cancellation routine
      */
-    public Runnable watch(Rpc.WatchRequest req, Consumer<Rpc.WatchResponse> resConsumer) {
+    public Runnable watch(long streamId, Rpc.WatchRequest req, Consumer<Rpc.WatchResponse> resConsumer) {
         if (req.hasCreateRequest()) {
             Rpc.WatchCreateRequest startReq = req.getCreateRequest();
+
+            // If watch_id is provided and non-zero, it will be assigned to this watcher.
+            // Since creating a watcher in etcd is not a synchronous operation,
+            // this can be used ensure that ordering is correct when creating multiple
+            // watchers on the same stream. Creating a watcher with an ID already in
+            // use on the stream will cause an error to be returned.
             long watchId = startReq.getWatchId();
 
-            watchers.put(watchId, new Watcher(ctx, cache, startReq, resConsumer));
+            WatcherId id = new WatcherId(streamId, watchId);
+
+            if (watchers.putIfAbsent(id, new Watcher(ctx, cache, startReq, resConsumer)) != null) {
+                throw new IllegalStateException("Watcher " + watchId + " already exists for stream " + streamId);
+            }
 
             resConsumer.accept(
                 Rpc.WatchResponse.newBuilder()
@@ -57,14 +75,15 @@ public final class Watch {
             );
 
             return () -> {
-                Watcher w = watchers.remove(watchId);
+                Watcher w = watchers.remove(id);
                 if (w != null)
                     w.cancel();
             };
         } else if (req.hasCancelRequest()) {
             long watchId = req.getCancelRequest().getWatchId();
+            WatcherId id = new WatcherId(streamId, watchId);
 
-            Watcher w = watchers.remove(watchId);
+            Watcher w = watchers.remove(id);
             if (w != null)
                 w.cancel();
 
@@ -80,14 +99,53 @@ public final class Watch {
         return nop;
     }
 
+    private static final class WatcherId {
+        private final long streamId;
+        private final long watchId;
+
+        public WatcherId(long streamId, long watchId) {
+            this.streamId = streamId;
+            this.watchId = watchId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            WatcherId watcherId = (WatcherId) o;
+            return streamId == watcherId.streamId &&
+                watchId == watcherId.watchId;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(streamId, watchId);
+        }
+
+        @Override
+        public String toString() {
+            return "WatcherId {" + streamId + ", " + watchId + "}";
+        }
+    }
+
     private static final class Watcher {
+        // Number of watcher running simultaneously is unlimited so cached thread pool is used for the watchers.
+        private static final ExecutorService watchExec =
+            Executors.newCachedThreadPool(new NamedThreadFactory("etcd-watch"));
+
+        // Number of threads reporting events is limited.
+        private static final ExecutorService reportExec = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors(),
+            new NamedThreadFactory("etcd-watch-report")
+        );
+
         private final EtcdCluster ctx;
         private final IgniteCache<Key, Value> cache;
         private final Rpc.WatchCreateRequest req;
         private final Consumer<Rpc.WatchResponse> resConsumer;
-        private final CountDownLatch done;
-        private final ExecutorService watchExec = Executors.newSingleThreadExecutor();
-        private final ExecutorService reportExec = Executors.newSingleThreadExecutor();
+        private final CountDownLatch done = new CountDownLatch(1);
+        private final CompletableFuture<?> watchFut;
+        private final List<CompletableFuture<?>> reportFuts = new ArrayList<>();
 
         public Watcher(
             EtcdCluster ctx,
@@ -99,15 +157,23 @@ public final class Watch {
             this.cache = cache;
             this.req = req;
             this.resConsumer = resConsumer;
-            done = new CountDownLatch(1);
 
-            watchExec.execute(this::run);
+            watchFut = CompletableFuture.runAsync(this::run, watchExec);
         }
 
         public void cancel() {
-            done.countDown();
-            reportExec.shutdownNow();
-            watchExec.shutdownNow();
+            CompletableFuture<?>[] futArr;
+            synchronized (reportFuts) {
+                done.countDown();
+                futArr = reportFuts.toArray(CompletableFuture<?>[]::new);
+            }
+
+            try {
+                CompletableFuture.allOf(futArr).get(5_000, TimeUnit.MILLISECONDS);
+                watchFut.get(5_000, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                e.printStackTrace();
+            }
         }
 
         private void run() {
@@ -135,12 +201,18 @@ public final class Watch {
             ContinuousQuery<Key, Value> q = new ContinuousQuery<>();
 
             q.setLocalListener(evts -> {
-                try {
-                    reportExec.execute(() -> report(evts));
-                } catch (Exception e) {
-                    // OK to get interrupted on cancellation
-                    if (done.getCount() > 0)
-                        e.printStackTrace();
+                synchronized (reportFuts) {
+                    if (done.getCount() > 0) {
+                        CompletableFuture<?> fut = CompletableFuture.runAsync(() -> report(evts), reportExec);
+                        reportFuts.add(fut);
+
+                        fut.thenRun(() -> {
+                            synchronized (reportFuts) {
+                                if (done.getCount() > 0)
+                                    reportFuts.remove(fut);
+                            }
+                        });
+                    }
                 }
             });
 
@@ -175,10 +247,8 @@ public final class Watch {
             if (done.getCount() > 0) {
                 try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
                     done.await();
-                } catch (Exception e) {
-                    // OK to get interrupted on cancellation
-                    if (done.getCount() > 0)
-                        e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -216,10 +286,32 @@ public final class Watch {
                 try {
                     resConsumer.accept(res.build());
                 } catch (Exception e) {
-                    // OK to get interrupted on cancellation
-                    if (done.getCount() > 0)
-                        e.printStackTrace();
+                    e.printStackTrace();
                 }
+            }
+        }
+
+        private static class NamedThreadFactory implements ThreadFactory {
+            private final ThreadGroup group;
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+            private final String namePrefix;
+
+            NamedThreadFactory(String prefix) {
+                SecurityManager s = System.getSecurityManager();
+                group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+                namePrefix = prefix;
+            }
+
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(group, r, namePrefix  + "-" + threadNumber.getAndIncrement(), 0);
+
+                if (t.isDaemon())
+                    t.setDaemon(false);
+
+                if (t.getPriority() != Thread.NORM_PRIORITY)
+                    t.setPriority(Thread.NORM_PRIORITY);
+
+                return t;
             }
         }
     }
