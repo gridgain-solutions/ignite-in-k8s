@@ -7,9 +7,11 @@ import org.apache.ignite.Ignite;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class Watch extends WatchGrpc.WatchImplBase {
     private final com.futurewei.ignite.etcd.Watch impl;
+    private final AtomicLong streamId = new AtomicLong(1);
 
     public Watch(Ignite ignite, String cacheName) {
         impl = new com.futurewei.ignite.etcd.Watch(ignite, cacheName);
@@ -19,10 +21,11 @@ public final class Watch extends WatchGrpc.WatchImplBase {
     public StreamObserver<Rpc.WatchRequest> watch(final StreamObserver<Rpc.WatchResponse> res) {
         return new StreamObserver<>() {
             private final Set<Runnable> cancellations = new HashSet<>();
+            private final long id = streamId.getAndIncrement();
 
             @Override
             public void onNext(Rpc.WatchRequest req) {
-                cancellations.add(impl.watch(req, res::onNext));
+                cancellations.add(impl.watch(id, req, res::onNext));
             }
 
             @Override
