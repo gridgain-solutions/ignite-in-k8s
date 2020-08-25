@@ -2,9 +2,11 @@ package com.futurewei.ignite.etcd;
 
 import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
+import io.grpc.StatusRuntimeException;
 import mvccpb.Kv;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.query.ContinuousQuery;
 import org.apache.ignite.cache.query.QueryCursor;
 
@@ -34,11 +36,13 @@ import java.util.function.Consumer;
 public final class Watch {
     private static final Runnable nop = () -> {};
     private final IgniteCache<Key, Value> cache;
+    private final IgniteLogger log;
     private final EtcdCluster ctx;
     private final Map<WatcherId, Watcher> watchers = new ConcurrentHashMap<>();
 
     public Watch(Ignite ignite, String cacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
+        log = ignite.log();
         ctx = new EtcdCluster(ignite);
     }
 
@@ -62,7 +66,7 @@ public final class Watch {
 
             WatcherId id = new WatcherId(streamId, watchId);
 
-            if (watchers.putIfAbsent(id, new Watcher(ctx, cache, startReq, resConsumer)) != null) {
+            if (watchers.putIfAbsent(id, new Watcher(ctx, cache, log, startReq, resConsumer)) != null) {
                 throw new IllegalStateException("Watcher " + watchId + " already exists for stream " + streamId);
             }
 
@@ -129,11 +133,11 @@ public final class Watch {
     }
 
     private static final class Watcher {
-        // Number of watcher running simultaneously is unlimited so cached thread pool is used for the watchers.
+        /** Limit number of simultaneous watchers to 1000 */
         private static final ExecutorService watchExec =
-            Executors.newCachedThreadPool(new NamedThreadFactory("etcd-watch"));
+            Executors.newFixedThreadPool(1_000, new NamedThreadFactory("etcd-watch"));
 
-        // Number of threads reporting events is limited.
+        /** Threads reporting events to the clients */
         private static final ExecutorService reportExec = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
             new NamedThreadFactory("etcd-watch-report")
@@ -141,6 +145,7 @@ public final class Watch {
 
         private final EtcdCluster ctx;
         private final IgniteCache<Key, Value> cache;
+        private final IgniteLogger log;
         private final Rpc.WatchCreateRequest req;
         private final Consumer<Rpc.WatchResponse> resConsumer;
         private final CountDownLatch done = new CountDownLatch(1);
@@ -150,11 +155,13 @@ public final class Watch {
         public Watcher(
             EtcdCluster ctx,
             IgniteCache<Key, Value> cache,
+            IgniteLogger log,
             Rpc.WatchCreateRequest req,
             Consumer<Rpc.WatchResponse> resConsumer
         ) {
             this.ctx = ctx;
             this.cache = cache;
+            this.log = log;
             this.req = req;
             this.resConsumer = resConsumer;
 
@@ -168,12 +175,11 @@ public final class Watch {
                 futArr = reportFuts.toArray(CompletableFuture<?>[]::new);
             }
 
-            try {
-                CompletableFuture.allOf(futArr).get(5_000, TimeUnit.MILLISECONDS);
-                watchFut.get(5_000, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
-            }
+            await(CompletableFuture.allOf(futArr), 20_000);
+
+            // Number of simultaneous watchers is limited so the watch timeout can be significant. Set the watcher
+            // timeout to 3 minutes for now and consider making it configurable.
+            await(watchFut, 180_000);
         }
 
         private void run() {
@@ -248,7 +254,7 @@ public final class Watch {
                 try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
                     done.await();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    log.error("Watch completed ungracefully", e);
                 }
             }
         }
@@ -285,9 +291,21 @@ public final class Watch {
             if (done.getCount() > 0) {
                 try {
                     resConsumer.accept(res.build());
+                } catch (StatusRuntimeException | IllegalStateException ignored) {
+                    // Client closed connection: ignore
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("Failed to notify watcher", e);
                 }
+            }
+        }
+
+        private void await(CompletableFuture<?> fut, long timeout) {
+            try {
+                fut.get(timeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                log.error("Operation did not complete in " + timeout + " ms", e);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("Operation completed ungracefully", e);
             }
         }
 
