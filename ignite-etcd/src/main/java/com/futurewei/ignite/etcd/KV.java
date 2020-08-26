@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.lang.IgniteCallable;
@@ -32,12 +33,14 @@ public final class KV {
 
     private final Ignite ignite;
     private final IgniteCache<Key, Value> cache;
+    private final IgniteLogger log;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
     private final EtcdCluster ctx;
 
     public KV(Ignite ignite, String cacheName, String histCacheName) {
         this.ignite = ignite;
         cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
+        log = ignite.log();
         histCache = ignite.getOrCreateCache(CacheConfig.KVHistory(histCacheName));
         ctx = new EtcdCluster(ignite);
     }
@@ -397,9 +400,8 @@ public final class KV {
             sqlArgs.add(rev);
         }
 
-        List<List<?>> res = cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray())).getAll();
-
-        return (Long) res.iterator().next().iterator().next();
+        return (Long) cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray()))
+            .getAll().iterator().next().iterator().next();
     }
 
     private Set<Key> keysInRange(Key start, Key end) {
@@ -434,7 +436,7 @@ public final class KV {
      *
      * @param txModifiesKey See {@link #getWithoutPayload(Key, boolean)}.
      */
-    public Rpc.RangeResponse rangeNonTx(Rpc.RangeRequest req, boolean txModifiesKey) {
+    private Rpc.RangeResponse rangeNonTx(Rpc.RangeRequest req, boolean txModifiesKey) {
         Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision()));
 
         // the first key for the range. If range_end is not given, the request only looks up key.
@@ -509,6 +511,21 @@ public final class KV {
                 .setCount(kvs.size());
         }
 
+        if (log.isTraceEnabled()) {
+            StringBuilder s = new StringBuilder("Range {")
+                .append("key: ").append(key.toStringUtf8());
+            if (end != null)
+                s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
+            if (cntOnly)
+                s.append(", countOnly: true");
+            if (rev > 0)
+                s.append(", rev: ").append(rev);
+            if (limit > 0)
+                s.append(", limit: ").append(limit);
+            s.append("}");
+            log.trace(s.toString());
+        }
+
         return res.build();
     }
 
@@ -533,6 +550,15 @@ public final class KV {
 
             cache.put(k, new Value(hVal, rev));
             histCache.put(new HistoricalKey(k, rev), hVal);
+
+            if (log.isTraceEnabled())
+                log.trace(
+                    "Put {key: " + reqKey.toStringUtf8() +
+                        ", value: " + reqVal.toStringUtf8() +
+                        ", ver: " + ver +
+                        ", rev: " + rev +
+                        "}"
+                );
         } else
             rev = ctx.revision();
 

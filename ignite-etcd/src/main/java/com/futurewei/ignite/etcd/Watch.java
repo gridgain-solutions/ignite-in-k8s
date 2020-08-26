@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public final class Watch {
     private static final Runnable nop = () -> {};
@@ -251,11 +253,34 @@ public final class Watch {
             );
 
             if (done.getCount() > 0) {
+                Supplier<String> watcherInfo = () -> {
+                    StringBuilder s = new StringBuilder("Watcher {")
+                        .append("key: ").append(key.toStringUtf8());
+                    if (end != null)
+                        s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
+                    if (startRev > 0)
+                        s.append(", startRev: ").append(startRev);
+                    if (!filters.isEmpty())
+                        s.append(", filters: [").append(
+                            filters.stream()
+                                .map(Rpc.WatchCreateRequest.FilterType::toString)
+                                .collect(Collectors.joining(", "))
+                        ).append("]");
+                    s.append("}");
+                    return s.toString();
+                };
+
+                if (log.isTraceEnabled())
+                    log.trace(watcherInfo.get() + " started");
+
                 try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
                     done.await();
                 } catch (InterruptedException e) {
-                    log.error("Watch completed ungracefully", e);
+                    log.error(watcherInfo.get() + " completed ungracefully", e);
                 }
+
+                if (log.isTraceEnabled())
+                    log.trace(watcherInfo.get() + " completed");
             }
         }
 
