@@ -20,8 +20,11 @@
         </property>
 
         <!-- For debugging only: -->
+
         <property name="failureDetectionTimeout" value="600000"/>
         <property name="clientFailureDetectionTimeout" value="600000"/>
         <property name="networkTimeout" value="600000"/>
+
+        <property name="metricsLogFrequency" value="0"/>
     </bean>
 </beans>

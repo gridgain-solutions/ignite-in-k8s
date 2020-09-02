@@ -1,8 +1,5 @@
 # Kubernetes Integration Test Report
 
-## Summary
-TODO
-
 ## Failures  
 | Test | Failure Cause
 | -----|--------------
@@ -18,11 +15,43 @@ TODO
 | `apiserver/apply/TestCreateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestUpdateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestPatchVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `auth/TestNodeAuthorizer` | [Intermittent test failure: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `certificates/TestCSRSignerNameApprovalPlugin` | [Intermittent test failure: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `certificates/TestCSRSignerNameSigningPlugin` | [Intermittent test failure: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `auth/TestNodeAuthorizer` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `certificates/TestCSRSignerNameApprovalPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `certificates/TestCSRSignerNameSigningPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `certificates/TestController_AutoApproval` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `client/TestAtomicPut` | [PUT not atomic](https://github.com/gridgain-solutions/ignite-in-k8s/issues/40)
-| `client/TestSingleWatch` | [Watch expires](https://github.com/gridgain-solutions/ignite-in-k8s/issues/41)
+| `client/TestSingleWatch` | [Watch took longer than TIMEOUT](https://github.com/gridgain-solutions/ignite-in-k8s/issues/41)
+| `client/TestSelfLinkOnNamespace` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `client/TestDynamicClient` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `client/TestDynamicClientWatch` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `daemonset/TestSimpleDaemonSetLaunchesPods` | [Apiserver received an error that is not an metav1.Status](https://github.com/gridgain-solutions/ignite-in-k8s/issues/43)
+| `disruption/TestPDBWithScaleSubresource` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `etcd/TestCrossGroupStorage` | [Timed out waiting for watch event for v1 in response to persisting v1](https://github.com/gridgain-solutions/ignite-in-k8s/issues/44)
+| `events/TestEventCompatibility` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `examples/TestAggregatedAPIServer` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestClusterScopedOwners` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestStressingCascadingDeletion` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestOrphaning` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestCustomResourceCascadingDeletion` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestMixedRelationships` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestCRDDeletionCascading` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
+| `kubelet/TestWatchBasedManager` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `master/TestAudit` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `master/TestLivezAndReadyz` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `master/TestReconcilerMasterLeaseMultiCombined` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `master/TestSecretsShouldBeTransformed` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `quota/TestQuota` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `scale/TestScaleSubresources` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `scheduler/TestPreemptionRaces` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
+| `scheduler/TestNominatedNodeCleanUp` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
+| `serviceaccount/TestServiceAccountTokenAutoMount` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `serving/TestComponentSecureServingAndAuth` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `statefulset/TestVolumeTemplateNoopUpdate` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `ttlcontroller/TestTTLAnnotations` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `volume/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
+| `volumescheduling/TestVolumeBinding` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `volumescheduling/TestVolumeBindingStressWithSchedulerResync` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `volumescheduling/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
 
 ## Report
 ```
@@ -380,63 +409,384 @@ TODO
 === RUN   TestOneNodeDaemonLaunchesPod
 === RUN   TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
---- FAIL: TestOneNodeDaemonLaunchesPod (128.25s)
-    --- FAIL: TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (63.97s)
-    --- FAIL: TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (64.28s)
+--- PASS: TestOneNodeDaemonLaunchesPod (39.91s)
+    --- PASS: TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (20.77s)
+    --- PASS: TestOneNodeDaemonLaunchesPod/TestOneNodeDaemonLaunchesPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (19.14s)
 === RUN   TestSimpleDaemonSetLaunchesPods
 === RUN   TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
---- FAIL: TestSimpleDaemonSetLaunchesPods (130.03s)
-    --- FAIL: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (65.05s)
-    --- FAIL: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (64.98s)
+--- FAIL: TestSimpleDaemonSetLaunchesPods (70.53s)
+    --- PASS: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (20.86s)
+    --- FAIL: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (49.67s)
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
---- FAIL: TestDaemonSetWithNodeSelectorLaunchesPods (84.22s)
-    --- FAIL: TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (64.88s)
-    --- PASS: TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (19.33s)
+--- PASS: TestDaemonSetWithNodeSelectorLaunchesPods (40.45s)
+    --- PASS: TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (20.88s)
+    --- PASS: TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (19.57s)
 === RUN   TestNotReadyNodeDaemonDoesLaunchPod
 === RUN   TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
---- FAIL: TestNotReadyNodeDaemonDoesLaunchPod (129.34s)
-    --- FAIL: TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (64.35s)
-    --- FAIL: TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (64.99s)
+--- PASS: TestNotReadyNodeDaemonDoesLaunchPod (38.55s)
+    --- PASS: TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (19.38s)
+    --- PASS: TestNotReadyNodeDaemonDoesLaunchPod/TestNotReadyNodeDaemonDoesLaunchPod_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (19.16s)
 === RUN   TestInsufficientCapacityNode
 === RUN   TestInsufficientCapacityNode/TestInsufficientCapacityNode_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestInsufficientCapacityNode/TestInsufficientCapacityNode_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
 === RUN   TestAdmission
 --- PASS: TestAdmission (3.95s)
 === RUN   TestNewDeployment
---- FAIL: TestNewDeployment (64.69s)
+--- PASS: TestNewDeployment (15.53s)
 === RUN   TestDeploymentRollingUpdate
---- FAIL: TestDeploymentRollingUpdate (65.24s)
+--- PASS: TestDeploymentRollingUpdate (58.47s)
 === RUN   TestDeploymentSelectorImmutability
 --- PASS: TestDeploymentSelectorImmutability (5.01s)
 === RUN   TestPausedDeployment
---- FAIL: TestPausedDeployment (65.49s)
+--- PASS: TestPausedDeployment (9.38s)
 === RUN   TestScalePausedDeployment
---- FAIL: TestScalePausedDeployment (67.49s)
+--- PASS: TestScalePausedDeployment (9.90s)
 === RUN   TestDeploymentHashCollision
 === RUN   TestPDBWithScaleSubresource
 --- FAIL: TestPDBWithScaleSubresource (33.74s)
-=== RUN   TestDryRun
---- FAIL: TestDryRun (32.35s)
+=== RUN   TestDryRun//v1,_Resource=configmaps
+=== RUN   TestDryRun//v1,_Resource=endpoints
+=== RUN   TestDryRun//v1,_Resource=events
+=== RUN   TestDryRun//v1,_Resource=limitranges
+=== RUN   TestDryRun//v1,_Resource=namespaces
+=== RUN   TestDryRun//v1,_Resource=nodes
+=== RUN   TestDryRun//v1,_Resource=persistentvolumeclaims
+=== RUN   TestDryRun//v1,_Resource=persistentvolumes
+=== RUN   TestDryRun//v1,_Resource=pods
+=== RUN   TestDryRun//v1,_Resource=podtemplates
+=== RUN   TestDryRun//v1,_Resource=replicationcontrollers
+=== RUN   TestDryRun//v1,_Resource=resourcequotas
+=== RUN   TestDryRun//v1,_Resource=secrets
+=== RUN   TestDryRun//v1,_Resource=serviceaccounts
+=== RUN   TestDryRun//v1,_Resource=services
+=== RUN   TestDryRun/apiregistration.k8s.io/v1,_Resource=apiservices
+=== RUN   TestDryRun/apiregistration.k8s.io/v1beta1,_Resource=apiservices
+=== RUN   TestDryRun/extensions/v1beta1,_Resource=ingresses
+=== RUN   TestDryRun/apps/v1,_Resource=controllerrevisions
+=== RUN   TestDryRun/apps/v1,_Resource=daemonsets
+=== RUN   TestDryRun/apps/v1,_Resource=deployments
+=== RUN   TestDryRun/apps/v1,_Resource=replicasets
+=== RUN   TestDryRun/apps/v1,_Resource=statefulsets
+=== RUN   TestDryRun/events.k8s.io/v1beta1,_Resource=events
+=== RUN   TestDryRun/autoscaling/v1,_Resource=horizontalpodautoscalers
+=== RUN   TestDryRun/autoscaling/v2beta1,_Resource=horizontalpodautoscalers
+=== RUN   TestDryRun/autoscaling/v2beta2,_Resource=horizontalpodautoscalers
+=== RUN   TestDryRun/batch/v1,_Resource=jobs
+=== RUN   TestDryRun/batch/v1beta1,_Resource=cronjobs
+=== RUN   TestDryRun/batch/v2alpha1,_Resource=cronjobs
+=== RUN   TestDryRun/certificates.k8s.io/v1beta1,_Resource=certificatesigningrequests
+=== RUN   TestDryRun/networking.k8s.io/v1,_Resource=networkpolicies
+=== RUN   TestDryRun/networking.k8s.io/v1beta1,_Resource=ingressclasses
+=== RUN   TestDryRun/networking.k8s.io/v1beta1,_Resource=ingresses
+=== RUN   TestDryRun/policy/v1beta1,_Resource=poddisruptionbudgets
+=== RUN   TestDryRun/policy/v1beta1,_Resource=podsecuritypolicies
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1,_Resource=clusterrolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1,_Resource=clusterroles
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1,_Resource=rolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1,_Resource=roles
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=clusterrolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=clusterroles
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=rolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=roles
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterrolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterroles
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=rolebindings
+=== RUN   TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=roles
+=== RUN   TestDryRun/settings.k8s.io/v1alpha1,_Resource=podpresets
+=== RUN   TestDryRun/storage.k8s.io/v1,_Resource=csidrivers
+=== RUN   TestDryRun/storage.k8s.io/v1,_Resource=csinodes
+=== RUN   TestDryRun/storage.k8s.io/v1,_Resource=storageclasses
+=== RUN   TestDryRun/storage.k8s.io/v1,_Resource=volumeattachments
+=== RUN   TestDryRun/storage.k8s.io/v1beta1,_Resource=csidrivers
+=== RUN   TestDryRun/storage.k8s.io/v1beta1,_Resource=csinodes
+=== RUN   TestDryRun/storage.k8s.io/v1beta1,_Resource=storageclasses
+=== RUN   TestDryRun/storage.k8s.io/v1beta1,_Resource=volumeattachments
+=== RUN   TestDryRun/storage.k8s.io/v1alpha1,_Resource=volumeattachments
+=== RUN   TestDryRun/admissionregistration.k8s.io/v1,_Resource=mutatingwebhookconfigurations
+=== RUN   TestDryRun/admissionregistration.k8s.io/v1,_Resource=validatingwebhookconfigurations
+=== RUN   TestDryRun/admissionregistration.k8s.io/v1beta1,_Resource=mutatingwebhookconfigurations
+=== RUN   TestDryRun/admissionregistration.k8s.io/v1beta1,_Resource=validatingwebhookconfigurations
+=== RUN   TestDryRun/apiextensions.k8s.io/v1,_Resource=customresourcedefinitions
+=== RUN   TestDryRun/apiextensions.k8s.io/v1beta1,_Resource=customresourcedefinitions
+=== RUN   TestDryRun/scheduling.k8s.io/v1,_Resource=priorityclasses
+=== RUN   TestDryRun/scheduling.k8s.io/v1beta1,_Resource=priorityclasses
+=== RUN   TestDryRun/scheduling.k8s.io/v1alpha1,_Resource=priorityclasses
+=== RUN   TestDryRun/coordination.k8s.io/v1,_Resource=leases
+=== RUN   TestDryRun/coordination.k8s.io/v1beta1,_Resource=leases
+=== RUN   TestDryRun/auditregistration.k8s.io/v1alpha1,_Resource=auditsinks
+=== RUN   TestDryRun/node.k8s.io/v1beta1,_Resource=runtimeclasses
+=== RUN   TestDryRun/node.k8s.io/v1alpha1,_Resource=runtimeclasses
+=== RUN   TestDryRun/discovery.k8s.io/v1beta1,_Resource=endpointslices
+=== RUN   TestDryRun/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=flowschemas
+=== RUN   TestDryRun/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=prioritylevelconfigurations
+=== RUN   TestDryRun/awesome.bears.com/v3,_Resource=pandas
+=== RUN   TestDryRun/awesome.bears.com/v1,_Resource=pandas
+=== RUN   TestDryRun/cr.bar.com/v1,_Resource=foos
+=== RUN   TestDryRun/random.numbers.com/v1,_Resource=integers
+=== RUN   TestDryRun/custom.fancy.com/v2,_Resource=pants
+--- PASS: TestDryRun (16.38s)
+    --- PASS: TestDryRun//v1,_Resource=configmaps (0.10s)
+    --- PASS: TestDryRun//v1,_Resource=endpoints (0.07s)
+    --- PASS: TestDryRun//v1,_Resource=events (0.08s)
+    --- PASS: TestDryRun//v1,_Resource=limitranges (0.09s)
+    --- PASS: TestDryRun//v1,_Resource=namespaces (0.06s)
+    --- PASS: TestDryRun//v1,_Resource=nodes (0.07s)
+    --- PASS: TestDryRun//v1,_Resource=persistentvolumeclaims (0.59s)
+    --- PASS: TestDryRun//v1,_Resource=persistentvolumes (0.07s)
+    --- PASS: TestDryRun//v1,_Resource=pods (0.09s)
+    --- PASS: TestDryRun//v1,_Resource=podtemplates (0.08s)
+    --- PASS: TestDryRun//v1,_Resource=replicationcontrollers (0.10s)
+    --- PASS: TestDryRun//v1,_Resource=resourcequotas (0.05s)
+    --- PASS: TestDryRun//v1,_Resource=secrets (0.06s)
+    --- PASS: TestDryRun//v1,_Resource=serviceaccounts (0.07s)
+    --- PASS: TestDryRun//v1,_Resource=services (0.11s)
+    --- PASS: TestDryRun/apiregistration.k8s.io/v1,_Resource=apiservices (0.34s)
+    --- PASS: TestDryRun/apiregistration.k8s.io/v1beta1,_Resource=apiservices (0.19s)
+    --- PASS: TestDryRun/extensions/v1beta1,_Resource=ingresses (0.10s)
+    --- PASS: TestDryRun/apps/v1,_Resource=controllerrevisions (0.07s)
+    --- PASS: TestDryRun/apps/v1,_Resource=daemonsets (0.06s)
+    --- PASS: TestDryRun/apps/v1,_Resource=deployments (0.07s)
+    --- PASS: TestDryRun/apps/v1,_Resource=replicasets (0.08s)
+    --- PASS: TestDryRun/apps/v1,_Resource=statefulsets (0.10s)
+    --- PASS: TestDryRun/events.k8s.io/v1beta1,_Resource=events (0.06s)
+    --- PASS: TestDryRun/autoscaling/v1,_Resource=horizontalpodautoscalers (0.06s)
+    --- PASS: TestDryRun/autoscaling/v2beta1,_Resource=horizontalpodautoscalers (0.06s)
+    --- PASS: TestDryRun/autoscaling/v2beta2,_Resource=horizontalpodautoscalers (0.06s)
+    --- PASS: TestDryRun/batch/v1,_Resource=jobs (0.05s)
+    --- PASS: TestDryRun/batch/v1beta1,_Resource=cronjobs (0.05s)
+    --- PASS: TestDryRun/batch/v2alpha1,_Resource=cronjobs (0.06s)
+    --- PASS: TestDryRun/certificates.k8s.io/v1beta1,_Resource=certificatesigningrequests (0.06s)
+    --- PASS: TestDryRun/networking.k8s.io/v1,_Resource=networkpolicies (0.05s)
+    --- PASS: TestDryRun/networking.k8s.io/v1beta1,_Resource=ingressclasses (0.06s)
+    --- PASS: TestDryRun/networking.k8s.io/v1beta1,_Resource=ingresses (0.05s)
+    --- PASS: TestDryRun/policy/v1beta1,_Resource=poddisruptionbudgets (0.04s)
+    --- PASS: TestDryRun/policy/v1beta1,_Resource=podsecuritypolicies (0.05s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1,_Resource=clusterrolebindings (0.05s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1,_Resource=clusterroles (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1,_Resource=rolebindings (0.05s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1,_Resource=roles (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=clusterrolebindings (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=clusterroles (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=rolebindings (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1beta1,_Resource=roles (0.06s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterrolebindings (0.05s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterroles (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=rolebindings (0.04s)
+    --- PASS: TestDryRun/rbac.authorization.k8s.io/v1alpha1,_Resource=roles (0.05s)
+    --- PASS: TestDryRun/settings.k8s.io/v1alpha1,_Resource=podpresets (0.05s)
+    --- PASS: TestDryRun/storage.k8s.io/v1,_Resource=csidrivers (0.06s)
+    --- PASS: TestDryRun/storage.k8s.io/v1,_Resource=csinodes (0.05s)
+    --- PASS: TestDryRun/storage.k8s.io/v1,_Resource=storageclasses (0.04s)
+    --- PASS: TestDryRun/storage.k8s.io/v1,_Resource=volumeattachments (0.04s)
+    --- PASS: TestDryRun/storage.k8s.io/v1beta1,_Resource=csidrivers (0.09s)
+    --- PASS: TestDryRun/storage.k8s.io/v1beta1,_Resource=csinodes (0.09s)
+    --- PASS: TestDryRun/storage.k8s.io/v1beta1,_Resource=storageclasses (0.06s)
+    --- PASS: TestDryRun/storage.k8s.io/v1beta1,_Resource=volumeattachments (0.05s)
+    --- PASS: TestDryRun/storage.k8s.io/v1alpha1,_Resource=volumeattachments (0.05s)
+    --- PASS: TestDryRun/admissionregistration.k8s.io/v1,_Resource=mutatingwebhookconfigurations (0.05s)
+    --- PASS: TestDryRun/admissionregistration.k8s.io/v1,_Resource=validatingwebhookconfigurations (0.58s)
+    --- PASS: TestDryRun/admissionregistration.k8s.io/v1beta1,_Resource=mutatingwebhookconfigurations (0.05s)
+    --- PASS: TestDryRun/admissionregistration.k8s.io/v1beta1,_Resource=validatingwebhookconfigurations (0.05s)
+    --- PASS: TestDryRun/apiextensions.k8s.io/v1,_Resource=customresourcedefinitions (0.08s)
+    --- PASS: TestDryRun/apiextensions.k8s.io/v1beta1,_Resource=customresourcedefinitions (0.19s)
+    --- PASS: TestDryRun/scheduling.k8s.io/v1,_Resource=priorityclasses (0.08s)
+    --- PASS: TestDryRun/scheduling.k8s.io/v1beta1,_Resource=priorityclasses (0.08s)
+    --- PASS: TestDryRun/scheduling.k8s.io/v1alpha1,_Resource=priorityclasses (0.05s)
+    --- PASS: TestDryRun/coordination.k8s.io/v1,_Resource=leases (0.05s)
+    --- PASS: TestDryRun/coordination.k8s.io/v1beta1,_Resource=leases (0.06s)
+    --- PASS: TestDryRun/auditregistration.k8s.io/v1alpha1,_Resource=auditsinks (0.05s)
+    --- PASS: TestDryRun/node.k8s.io/v1beta1,_Resource=runtimeclasses (0.05s)
+    --- PASS: TestDryRun/node.k8s.io/v1alpha1,_Resource=runtimeclasses (0.04s)
+    --- PASS: TestDryRun/discovery.k8s.io/v1beta1,_Resource=endpointslices (0.06s)
+    --- PASS: TestDryRun/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=flowschemas (0.08s)
+    --- PASS: TestDryRun/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=prioritylevelconfigurations (0.05s)
+    --- PASS: TestDryRun/awesome.bears.com/v3,_Resource=pandas (0.15s)
+    --- PASS: TestDryRun/awesome.bears.com/v1,_Resource=pandas (0.06s)
+    --- PASS: TestDryRun/cr.bar.com/v1,_Resource=foos (0.09s)
+    --- PASS: TestDryRun/random.numbers.com/v1,_Resource=integers (0.17s)
+    --- PASS: TestDryRun/custom.fancy.com/v2,_Resource=pants (0.09s)
 === RUN   TestOverlappingBuiltInResources
 --- PASS: TestOverlappingBuiltInResources (0.00s)
 === RUN   TestOverlappingCustomResourceAPIService
---- FAIL: TestOverlappingCustomResourceAPIService (65.25s)
+--- PASS: TestOverlappingCustomResourceAPIService (18.01s)
 === RUN   TestOverlappingCustomResourceCustomResourceDefinition
---- FAIL: TestOverlappingCustomResourceCustomResourceDefinition (65.49s)
+--- PASS: TestOverlappingCustomResourceCustomResourceDefinition (16.75s)
 === RUN   TestCrossGroupStorage
---- FAIL: TestCrossGroupStorage (66.81s)
+=== RUN   TestCrossGroupStorage//v1,_Kind=Event
+=== RUN   TestCrossGroupStorage/networking.k8s.io/v1beta1,_Kind=Ingress
+--- FAIL: TestCrossGroupStorage (71.79s)
+    --- PASS: TestCrossGroupStorage/networking.k8s.io/v1beta1,_Kind=Ingress (0.05s)
+    --- FAIL: TestCrossGroupStorage//v1,_Kind=Event (60.06s)
 === RUN   TestEtcdStoragePath
---- FAIL: TestEtcdStoragePath (70.76s)
-=== RUN   TestEventCompatibility
---- FAIL: TestEventCompatibility (34.41s)
+=== RUN   TestEtcdStoragePath//v1,_Resource=configmaps
+=== RUN   TestEtcdStoragePath//v1,_Resource=endpoints
+=== RUN   TestEtcdStoragePath//v1,_Resource=events
+=== RUN   TestEtcdStoragePath//v1,_Resource=limitranges
+=== RUN   TestEtcdStoragePath//v1,_Resource=namespaces
+=== RUN   TestEtcdStoragePath//v1,_Resource=nodes
+=== RUN   TestEtcdStoragePath//v1,_Resource=persistentvolumeclaims
+=== RUN   TestEtcdStoragePath//v1,_Resource=persistentvolumes
+=== RUN   TestEtcdStoragePath//v1,_Resource=pods
+=== RUN   TestEtcdStoragePath//v1,_Resource=podtemplates
+=== RUN   TestEtcdStoragePath//v1,_Resource=replicationcontrollers
+=== RUN   TestEtcdStoragePath//v1,_Resource=resourcequotas
+=== RUN   TestEtcdStoragePath//v1,_Resource=secrets
+=== RUN   TestEtcdStoragePath//v1,_Resource=serviceaccounts
+=== RUN   TestEtcdStoragePath//v1,_Resource=services
+=== RUN   TestEtcdStoragePath/apiregistration.k8s.io/v1,_Resource=apiservices
+=== RUN   TestEtcdStoragePath/apiregistration.k8s.io/v1beta1,_Resource=apiservices
+=== RUN   TestEtcdStoragePath/extensions/v1beta1,_Resource=ingresses
+=== RUN   TestEtcdStoragePath/apps/v1,_Resource=controllerrevisions
+=== RUN   TestEtcdStoragePath/apps/v1,_Resource=daemonsets
+=== RUN   TestEtcdStoragePath/apps/v1,_Resource=deployments
+=== RUN   TestEtcdStoragePath/apps/v1,_Resource=replicasets
+=== RUN   TestEtcdStoragePath/apps/v1,_Resource=statefulsets
+=== RUN   TestEtcdStoragePath/events.k8s.io/v1beta1,_Resource=events
+=== RUN   TestEtcdStoragePath/autoscaling/v1,_Resource=horizontalpodautoscalers
+=== RUN   TestEtcdStoragePath/autoscaling/v2beta1,_Resource=horizontalpodautoscalers
+=== RUN   TestEtcdStoragePath/autoscaling/v2beta2,_Resource=horizontalpodautoscalers
+=== RUN   TestEtcdStoragePath/batch/v1,_Resource=jobs
+=== RUN   TestEtcdStoragePath/batch/v1beta1,_Resource=cronjobs
+=== RUN   TestEtcdStoragePath/batch/v2alpha1,_Resource=cronjobs
+=== RUN   TestEtcdStoragePath/certificates.k8s.io/v1beta1,_Resource=certificatesigningrequests
+=== RUN   TestEtcdStoragePath/networking.k8s.io/v1,_Resource=networkpolicies
+=== RUN   TestEtcdStoragePath/networking.k8s.io/v1beta1,_Resource=ingressclasses
+=== RUN   TestEtcdStoragePath/networking.k8s.io/v1beta1,_Resource=ingresses
+=== RUN   TestEtcdStoragePath/policy/v1beta1,_Resource=poddisruptionbudgets
+=== RUN   TestEtcdStoragePath/policy/v1beta1,_Resource=podsecuritypolicies
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=clusterrolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=clusterroles
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=rolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=roles
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=clusterrolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=clusterroles
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=rolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=roles
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterrolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterroles
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=rolebindings
+=== RUN   TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=roles
+=== RUN   TestEtcdStoragePath/settings.k8s.io/v1alpha1,_Resource=podpresets
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1,_Resource=csidrivers
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1,_Resource=csinodes
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1,_Resource=storageclasses
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1,_Resource=volumeattachments
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=csidrivers
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=csinodes
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=storageclasses
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=volumeattachments
+=== RUN   TestEtcdStoragePath/storage.k8s.io/v1alpha1,_Resource=volumeattachments
+=== RUN   TestEtcdStoragePath/admissionregistration.k8s.io/v1,_Resource=mutatingwebhookconfigurations
+=== RUN   TestEtcdStoragePath/admissionregistration.k8s.io/v1,_Resource=validatingwebhookconfigurations
+=== RUN   TestEtcdStoragePath/admissionregistration.k8s.io/v1beta1,_Resource=mutatingwebhookconfigurations
+=== RUN   TestEtcdStoragePath/admissionregistration.k8s.io/v1beta1,_Resource=validatingwebhookconfigurations
+=== RUN   TestEtcdStoragePath/apiextensions.k8s.io/v1,_Resource=customresourcedefinitions
+=== RUN   TestEtcdStoragePath/apiextensions.k8s.io/v1beta1,_Resource=customresourcedefinitions
+=== RUN   TestEtcdStoragePath/scheduling.k8s.io/v1,_Resource=priorityclasses
+=== RUN   TestEtcdStoragePath/scheduling.k8s.io/v1beta1,_Resource=priorityclasses
+=== RUN   TestEtcdStoragePath/scheduling.k8s.io/v1alpha1,_Resource=priorityclasses
+=== RUN   TestEtcdStoragePath/coordination.k8s.io/v1,_Resource=leases
+=== RUN   TestEtcdStoragePath/coordination.k8s.io/v1beta1,_Resource=leases
+=== RUN   TestEtcdStoragePath/auditregistration.k8s.io/v1alpha1,_Resource=auditsinks
+=== RUN   TestEtcdStoragePath/node.k8s.io/v1beta1,_Resource=runtimeclasses
+=== RUN   TestEtcdStoragePath/node.k8s.io/v1alpha1,_Resource=runtimeclasses
+=== RUN   TestEtcdStoragePath/discovery.k8s.io/v1beta1,_Resource=endpointslices
+=== RUN   TestEtcdStoragePath/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=flowschemas
+=== RUN   TestEtcdStoragePath/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=prioritylevelconfigurations
+=== RUN   TestEtcdStoragePath/awesome.bears.com/v3,_Resource=pandas
+=== RUN   TestEtcdStoragePath/awesome.bears.com/v1,_Resource=pandas
+=== RUN   TestEtcdStoragePath/cr.bar.com/v1,_Resource=foos
+=== RUN   TestEtcdStoragePath/random.numbers.com/v1,_Resource=integers
+=== RUN   TestEtcdStoragePath/custom.fancy.com/v2,_Resource=pants
+--- PASS: TestEtcdStoragePath (14.40s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=configmaps (0.03s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=endpoints (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=events (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=limitranges (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=namespaces (0.01s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=nodes (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=persistentvolumeclaims (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=persistentvolumes (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=pods (0.03s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=podtemplates (0.03s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=replicationcontrollers (0.03s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=resourcequotas (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=secrets (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=serviceaccounts (0.02s)
+    --- PASS: TestEtcdStoragePath//v1,_Resource=services (0.04s)
+    --- PASS: TestEtcdStoragePath/apiregistration.k8s.io/v1,_Resource=apiservices (0.02s)
+    --- PASS: TestEtcdStoragePath/apiregistration.k8s.io/v1beta1,_Resource=apiservices (0.02s)
+    --- PASS: TestEtcdStoragePath/extensions/v1beta1,_Resource=ingresses (0.02s)
+    --- PASS: TestEtcdStoragePath/apps/v1,_Resource=controllerrevisions (0.02s)
+    --- PASS: TestEtcdStoragePath/apps/v1,_Resource=daemonsets (0.03s)
+    --- PASS: TestEtcdStoragePath/apps/v1,_Resource=deployments (0.02s)
+    --- PASS: TestEtcdStoragePath/apps/v1,_Resource=replicasets (0.02s)
+    --- PASS: TestEtcdStoragePath/apps/v1,_Resource=statefulsets (0.03s)
+    --- PASS: TestEtcdStoragePath/events.k8s.io/v1beta1,_Resource=events (0.03s)
+    --- PASS: TestEtcdStoragePath/autoscaling/v1,_Resource=horizontalpodautoscalers (0.04s)
+    --- PASS: TestEtcdStoragePath/autoscaling/v2beta1,_Resource=horizontalpodautoscalers (0.02s)
+    --- PASS: TestEtcdStoragePath/autoscaling/v2beta2,_Resource=horizontalpodautoscalers (0.03s)
+    --- PASS: TestEtcdStoragePath/batch/v1,_Resource=jobs (0.04s)
+    --- PASS: TestEtcdStoragePath/batch/v1beta1,_Resource=cronjobs (0.07s)
+    --- PASS: TestEtcdStoragePath/batch/v2alpha1,_Resource=cronjobs (0.03s)
+    --- PASS: TestEtcdStoragePath/certificates.k8s.io/v1beta1,_Resource=certificatesigningrequests (0.02s)
+    --- PASS: TestEtcdStoragePath/networking.k8s.io/v1,_Resource=networkpolicies (0.02s)
+    --- PASS: TestEtcdStoragePath/networking.k8s.io/v1beta1,_Resource=ingressclasses (0.02s)
+    --- PASS: TestEtcdStoragePath/networking.k8s.io/v1beta1,_Resource=ingresses (0.02s)
+    --- PASS: TestEtcdStoragePath/policy/v1beta1,_Resource=poddisruptionbudgets (0.02s)
+    --- PASS: TestEtcdStoragePath/policy/v1beta1,_Resource=podsecuritypolicies (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=clusterrolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=clusterroles (0.01s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=rolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1,_Resource=roles (0.01s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=clusterrolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=clusterroles (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=rolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1beta1,_Resource=roles (0.03s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterrolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=clusterroles (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=rolebindings (0.02s)
+    --- PASS: TestEtcdStoragePath/rbac.authorization.k8s.io/v1alpha1,_Resource=roles (0.03s)
+    --- PASS: TestEtcdStoragePath/settings.k8s.io/v1alpha1,_Resource=podpresets (0.04s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1,_Resource=csidrivers (0.04s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1,_Resource=csinodes (0.03s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1,_Resource=storageclasses (0.03s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1,_Resource=volumeattachments (0.02s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=csidrivers (0.02s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=csinodes (0.02s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=storageclasses (0.02s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1beta1,_Resource=volumeattachments (0.03s)
+    --- PASS: TestEtcdStoragePath/storage.k8s.io/v1alpha1,_Resource=volumeattachments (0.02s)
+    --- PASS: TestEtcdStoragePath/admissionregistration.k8s.io/v1,_Resource=mutatingwebhookconfigurations (0.02s)
+    --- PASS: TestEtcdStoragePath/admissionregistration.k8s.io/v1,_Resource=validatingwebhookconfigurations (0.02s)
+    --- PASS: TestEtcdStoragePath/admissionregistration.k8s.io/v1beta1,_Resource=mutatingwebhookconfigurations (0.01s)
+    --- PASS: TestEtcdStoragePath/admissionregistration.k8s.io/v1beta1,_Resource=validatingwebhookconfigurations (0.02s)
+    --- PASS: TestEtcdStoragePath/apiextensions.k8s.io/v1,_Resource=customresourcedefinitions (0.03s)
+    --- PASS: TestEtcdStoragePath/apiextensions.k8s.io/v1beta1,_Resource=customresourcedefinitions (0.09s)
+    --- PASS: TestEtcdStoragePath/scheduling.k8s.io/v1,_Resource=priorityclasses (0.05s)
+    --- PASS: TestEtcdStoragePath/scheduling.k8s.io/v1beta1,_Resource=priorityclasses (0.03s)
+    --- PASS: TestEtcdStoragePath/scheduling.k8s.io/v1alpha1,_Resource=priorityclasses (0.05s)
+    --- PASS: TestEtcdStoragePath/coordination.k8s.io/v1,_Resource=leases (0.04s)
+    --- PASS: TestEtcdStoragePath/coordination.k8s.io/v1beta1,_Resource=leases (0.03s)
+    --- PASS: TestEtcdStoragePath/auditregistration.k8s.io/v1alpha1,_Resource=auditsinks (0.04s)
+    --- PASS: TestEtcdStoragePath/node.k8s.io/v1beta1,_Resource=runtimeclasses (0.02s)
+    --- PASS: TestEtcdStoragePath/node.k8s.io/v1alpha1,_Resource=runtimeclasses (0.03s)
+    --- PASS: TestEtcdStoragePath/discovery.k8s.io/v1beta1,_Resource=endpointslices (0.03s)
+    --- PASS: TestEtcdStoragePath/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=flowschemas (0.02s)
+    --- PASS: TestEtcdStoragePath/flowcontrol.apiserver.k8s.io/v1alpha1,_Resource=prioritylevelconfigurations (0.02s)
+    --- PASS: TestEtcdStoragePath/awesome.bears.com/v3,_Resource=pandas (0.10s)
+    --- PASS: TestEtcdStoragePath/awesome.bears.com/v1,_Resource=pandas (0.03s)
+    --- PASS: TestEtcdStoragePath/cr.bar.com/v1,_Resource=foos (0.07s)
+    --- PASS: TestEtcdStoragePath/random.numbers.com/v1,_Resource=integers (0.06s)
+    --- PASS: TestEtcdStoragePath/custom.fancy.com/v2,_Resource=pants (0.07s)
 === RUN   TestConcurrentEvictionRequests
---- PASS: TestConcurrentEvictionRequests (9.44s)
+--- PASS: TestConcurrentEvictionRequests (11.11s)
 === RUN   TestTerminalPodEviction
---- PASS: TestTerminalPodEviction (7.18s)
+--- PASS: TestTerminalPodEviction (6.16s)
 === RUN   TestAggregatedAPIServer
 --- FAIL: TestAggregatedAPIServer (31.92s)
 === RUN   TestWebhookLoopback
@@ -444,21 +794,21 @@ TODO
 === RUN   TestClusterScopedOwners
 --- FAIL: TestClusterScopedOwners (32.57s)
 === RUN   TestCascadingDeletion
---- FAIL: TestCascadingDeletion (32.12s)
+--- PASS: TestCascadingDeletion (8.70s)
 === RUN   TestCreateWithNonExistentOwner
---- FAIL: TestCreateWithNonExistentOwner (33.73s)
+--- PASS: TestCreateWithNonExistentOwner (8.72s)
 === RUN   TestStressingCascadingDeletion
 --- FAIL: TestStressingCascadingDeletion (32.23s)
 === RUN   TestOrphaning
 --- FAIL: TestOrphaning (33.94s)
 === RUN   TestSolidOwnerDoesNotBlockWaitingOwner
---- FAIL: TestSolidOwnerDoesNotBlockWaitingOwner (34.79s)
+--- PASS: TestSolidOwnerDoesNotBlockWaitingOwner (8.31s)
 === RUN   TestNonBlockingOwnerRefDoesNotBlock
---- FAIL: TestNonBlockingOwnerRefDoesNotBlock (31.76s)
+--- PASS: TestNonBlockingOwnerRefDoesNotBlock (8.56s)
 === RUN   TestDoubleDeletionWithFinalizer
---- FAIL: TestDoubleDeletionWithFinalizer (39.76s)
+--- PASS: TestDoubleDeletionWithFinalizer (11.85s)
 === RUN   TestBlockingOwnerRefDoesBlock
---- FAIL: TestBlockingOwnerRefDoesBlock (33.28s)
+--- PASS: TestBlockingOwnerRefDoesBlock (23.24s)
 === RUN   TestCustomResourceCascadingDeletion
 --- FAIL: TestCustomResourceCascadingDeletion (34.76s)
 === RUN   TestMixedRelationships
@@ -470,8 +820,14 @@ TODO
 --- FAIL: TestWatchBasedManager (33.18s)
 === RUN   TestDynamicAudit
 === RUN   TestDynamicAudit/one_sink
---- FAIL: TestDynamicAudit (97.36s)
-    --- FAIL: TestDynamicAudit/one_sink (90.08s)
+=== RUN   TestDynamicAudit/two_sink
+=== RUN   TestDynamicAudit/delete_sink
+=== RUN   TestDynamicAudit/update_sink
+--- PASS: TestDynamicAudit (17.47s)
+    --- PASS: TestDynamicAudit/one_sink (1.06s)
+    --- PASS: TestDynamicAudit/two_sink (1.05s)
+    --- PASS: TestDynamicAudit/delete_sink (1.06s)
+    --- PASS: TestDynamicAudit/update_sink (6.65s)
 === RUN   TestAudit
 === RUN   TestAudit/audit.k8s.io/v1.RequestResponse.false
 === RUN   TestAudit/audit.k8s.io/v1.Metadata.true
@@ -481,207 +837,281 @@ TODO
 === RUN   TestAudit/audit.k8s.io/v1beta1.Metadata.true
 === RUN   TestAudit/audit.k8s.io/v1beta1.Request.true
 === RUN   TestAudit/audit.k8s.io/v1beta1.RequestResponse.true
---- FAIL: TestAudit (253.67s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.false (35.86s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.Metadata.true (33.07s)
-    --- PASS: TestAudit/audit.k8s.io/v1.Request.true (10.78s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.true (33.95s)
-    --- FAIL: TestAudit/audit.k8s.io/v1beta1.RequestResponse.false (32.87s)
-    --- FAIL: TestAudit/audit.k8s.io/v1beta1.Metadata.true (39.03s)
-    --- FAIL: TestAudit/audit.k8s.io/v1beta1.Request.true (34.24s)
-    --- FAIL: TestAudit/audit.k8s.io/v1beta1.RequestResponse.true (33.87s)
+--- FAIL: TestAudit (143.17s)
+    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.false (32.65s)
+    --- FAIL: TestAudit/audit.k8s.io/v1.Metadata.true (31.58s)
+    --- PASS: TestAudit/audit.k8s.io/v1.Request.true (9.51s)
+    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.true (32.39s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.false (9.38s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.Metadata.true (9.19s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.Request.true (9.41s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.true (9.05s)
 === RUN   TestCRDShadowGroup
---- FAIL: TestCRDShadowGroup (33.36s)
+--- PASS: TestCRDShadowGroup (10.20s)
 === RUN   TestCRD
---- FAIL: TestCRD (32.15s)
+--- PASS: TestCRD (8.22s)
 === RUN   TestCRDOpenAPI
---- FAIL: TestCRDOpenAPI (31.88s)
+--- PASS: TestCRDOpenAPI (23.39s)
 === RUN   TestGracefulShutdown
---- FAIL: TestGracefulShutdown (31.81s)
+--- PASS: TestGracefulShutdown (8.71s)
 === RUN   TestKMSProvider
---- FAIL: TestKMSProvider (31.84s)
+--- PASS: TestKMSProvider (7.85s)
 === RUN   TestKMSHealthz
---- FAIL: TestKMSHealthz (31.95s)
+--- PASS: TestKMSHealthz (48.57s)
 === RUN   TestRun
---- FAIL: TestRun (31.76s)
+--- PASS: TestRun (7.67s)
 === RUN   TestLivezAndReadyz
+--- FAIL: TestLivezAndReadyz (31.74s)
+=== RUN   TestOpenAPIDelegationChainPlumbing
+--- PASS: TestOpenAPIDelegationChainPlumbing (7.45s)
+=== RUN   TestOpenAPIApiextensionsOverlapProtection
+--- PASS: TestOpenAPIApiextensionsOverlapProtection (31.35s)
+=== RUN   TestReconcilerMasterLeaseCombined
+--- PASS: TestReconcilerMasterLeaseCombined (40.95s)
+=== RUN   TestReconcilerMasterLeaseMultiMoreMasters
+--- PASS: TestReconcilerMasterLeaseMultiMoreMasters (41.85s)
+=== RUN   TestReconcilerMasterLeaseMultiCombined
+--- FAIL: TestReconcilerMasterLeaseMultiCombined (31.51s)
+=== RUN   TestSecretsShouldBeTransformed
+--- FAIL: TestSecretsShouldBeTransformed (38.92s)
 === RUN   TestMasterProcessMetrics
+--- PASS: TestMasterProcessMetrics (6.09s)
 === RUN   TestApiserverMetrics
---- PASS: TestApiserverMetrics (4.61s)
+--- PASS: TestApiserverMetrics (4.03s)
 === RUN   TestNamespaceCondition
---- FAIL: TestNamespaceCondition (64.54s)
-=== RUN   TestTaintBasedEvictions
+--- PASS: TestNamespaceCondition (11.66s)
 === RUN   TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_200_tolerationseconds
 === RUN   TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_with_no_pod_tolerations
 === RUN   TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_0_tolerationseconds
 === RUN   TestTaintBasedEvictions/Taint_based_evictions_for_NodeUnreachable
---- FAIL: TestTaintBasedEvictions (74.97s)
-    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_200_tolerationseconds (11.00s)
-    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_with_no_pod_tolerations (11.63s)
-    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_0_tolerationseconds (16.06s)
-    --- FAIL: TestTaintBasedEvictions/Taint_based_evictions_for_NodeUnreachable (36.28s)
+--- PASS: TestTaintBasedEvictions (43.91s)
+    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_200_tolerationseconds (12.25s)
+    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_with_no_pod_tolerations (10.64s)
+    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeNotReady_and_0_tolerationseconds (10.60s)
+    --- PASS: TestTaintBasedEvictions/Taint_based_evictions_for_NodeUnreachable (10.43s)
 === RUN   TestIgnoreClusterName
---- PASS: TestIgnoreClusterName (4.34s)
+--- PASS: TestIgnoreClusterName (5.97s)
 === RUN   TestMasterExportsSymbols
 --- PASS: TestMasterExportsSymbols (0.00s)
 === RUN   TestPodUpdateActiveDeadlineSeconds
---- PASS: TestPodUpdateActiveDeadlineSeconds (7.67s)
+--- PASS: TestPodUpdateActiveDeadlineSeconds (10.00s)
 === RUN   TestPodReadOnlyFilesystem
---- PASS: TestPodReadOnlyFilesystem (5.43s)
+--- PASS: TestPodReadOnlyFilesystem (4.37s)
 === RUN   TestPodCreateEphemeralContainers
---- PASS: TestPodCreateEphemeralContainers (4.46s)
+--- PASS: TestPodCreateEphemeralContainers (4.07s)
 === RUN   TestPodPatchEphemeralContainers
---- PASS: TestPodPatchEphemeralContainers (10.37s)
+--- PASS: TestPodPatchEphemeralContainers (9.72s)
 === RUN   TestPodUpdateEphemeralContainers
---- PASS: TestPodUpdateEphemeralContainers (11.04s)
+--- PASS: TestPodUpdateEphemeralContainers (11.11s)
 === RUN   TestQuota
---- FAIL: TestQuota (192.22s)
+--- FAIL: TestQuota (186.08s)
 === RUN   TestQuotaLimitedResourceDenial
---- FAIL: TestQuotaLimitedResourceDenial (66.02s)
+--- PASS: TestQuotaLimitedResourceDenial (4.35s)
 === RUN   TestAdoption
---- FAIL: TestAdoption (592.74s)
+--- PASS: TestAdoption (18.14s)
 === RUN   TestRSSelectorImmutability
---- PASS: TestRSSelectorImmutability (4.76s)
+--- PASS: TestRSSelectorImmutability (4.11s)
 === RUN   TestSpecReplicasChange
-=== RUN   TestAdoption
---- FAIL: TestAdoption (65.38s)
-=== RUN   TestSpecReplicasChange
---- PASS: TestSpecReplicasChange (11.91s)
+--- PASS: TestSpecReplicasChange (6.04s)
 === RUN   TestDeletingAndFailedPods
---- PASS: TestDeletingAndFailedPods (5.65s)
-=== RUN   TestOverlappingRCs
---- FAIL: TestOverlappingRCs (66.44s)
+--- PASS: TestDeletingAndFailedPods (4.43s)
+=== RUN   TestOverlappingRSs
+--- PASS: TestOverlappingRSs (4.47s)
 === RUN   TestPodOrphaningAndAdoptionWhenLabelsChange
---- PASS: TestPodOrphaningAndAdoptionWhenLabelsChange (5.99s)
+--- PASS: TestPodOrphaningAndAdoptionWhenLabelsChange (4.49s)
 === RUN   TestGeneralPodAdoption
---- PASS: TestGeneralPodAdoption (5.72s)
+--- PASS: TestGeneralPodAdoption (5.01s)
 === RUN   TestReadyAndAvailableReplicas
---- PASS: TestReadyAndAvailableReplicas (4.83s)
-=== RUN   TestRCScaleSubresource
---- PASS: TestRCScaleSubresource (6.56s)
+--- PASS: TestReadyAndAvailableReplicas (4.29s)
+=== RUN   TestRSScaleSubresource
+--- PASS: TestRSScaleSubresource (4.78s)
 === RUN   TestExtraPodsAdoptionAndDeletion
-=== RUN   TestScaleSubresources
---- FAIL: TestScaleSubresources (32.12s)
-=== RUN   TestSchedulerExtender
---- FAIL: TestSchedulerExtender (34.38s)
-=== RUN   TestPreFilterPlugin
---- FAIL: TestPreFilterPlugin (39.95s)
-=== RUN   TestScorePlugin
---- PASS: TestScorePlugin (8.19s)
-=== RUN   TestNormalizeScorePlugin
---- FAIL: TestNormalizeScorePlugin (38.84s)
-=== RUN   TestReservePlugin
---- PASS: TestReservePlugin (5.06s)
-=== RUN   TestPrebindPlugin
---- FAIL: TestPrebindPlugin (125.12s)
-=== RUN   TestUnreservePlugin
---- FAIL: TestUnreservePlugin (64.51s)
-=== RUN   TestBindPlugin
---- FAIL: TestBindPlugin (274.47s)
-=== RUN   TestPostBindPlugin
---- PASS: TestPostBindPlugin (4.71s)
-=== RUN   TestPermitPlugin
-=== RUN   TestSchedule100Node3KPods
-=== RUN   TestSecrets
---- PASS: TestSecrets (4.46s)
-=== RUN   TestServiceAccountAutoCreate
---- PASS: TestServiceAccountAutoCreate (9.72s)
-=== RUN   TestServiceAccountTokenAutoCreate
---- PASS: TestServiceAccountTokenAutoCreate (14.44s)
-=== RUN   TestServiceAccountTokenAutoMount
---- FAIL: TestServiceAccountTokenAutoMount (17.69s)
-=== RUN   TestServiceAccountTokenAuthentication
---- FAIL: TestServiceAccountTokenAuthentication (17.19s)
-=== RUN   TestComponentSecureServingAndAuth
---- FAIL: TestComponentSecureServingAndAuth (33.64s)
-=== RUN   TestVolumeTemplateNoopUpdate
---- FAIL: TestVolumeTemplateNoopUpdate (32.01s)
+--- PASS: TestExtraPodsAdoptionAndDeletion (4.28s)
+=== RUN   TestFullyLabeledReplicas
+--- PASS: TestFullyLabeledReplicas (4.17s)
+=== RUN   TestReplicaSetsAppsV1DefaultGCPolicy
+--- PASS: TestReplicaSetsAppsV1DefaultGCPolicy (4.40s)
+=== RUN   TestAdoption
+--- PASS: TestAdoption (18.99s)
 === RUN   TestSpecReplicasChange
---- FAIL: TestSpecReplicasChange (65.52s)
+--- PASS: TestSpecReplicasChange (8.11s)
 === RUN   TestDeletingAndFailedPods
---- FAIL: TestDeletingAndFailedPods (64.80s)
+--- PASS: TestDeletingAndFailedPods (4.20s)
+=== RUN   TestOverlappingRCs
+--- PASS: TestOverlappingRCs (4.30s)
+=== RUN   TestPodOrphaningAndAdoptionWhenLabelsChange
+--- PASS: TestPodOrphaningAndAdoptionWhenLabelsChange (4.36s)
+=== RUN   TestGeneralPodAdoption
+--- PASS: TestGeneralPodAdoption (4.77s)
+=== RUN   TestReadyAndAvailableReplicas
+--- PASS: TestReadyAndAvailableReplicas (4.47s)
+=== RUN   TestRCScaleSubresource
+--- PASS: TestRCScaleSubresource (5.69s)
+=== RUN   TestExtraPodsAdoptionAndDeletion
+--- PASS: TestExtraPodsAdoptionAndDeletion (4.78s)
+=== RUN   TestFullyLabeledReplicas
+--- PASS: TestFullyLabeledReplicas (4.43s)
+=== RUN   TestAdoption
+--- PASS: TestAdoption (18.99s)
+=== RUN   TestSpecReplicasChange
+--- PASS: TestSpecReplicasChange (8.11s)
+=== RUN   TestDeletingAndFailedPods
+--- PASS: TestDeletingAndFailedPods (4.20s)
+=== RUN   TestOverlappingRCs
+--- PASS: TestOverlappingRCs (4.30s)
+=== RUN   TestPodOrphaningAndAdoptionWhenLabelsChange
+--- PASS: TestPodOrphaningAndAdoptionWhenLabelsChange (4.36s)
+=== RUN   TestGeneralPodAdoption
+--- PASS: TestGeneralPodAdoption (4.77s)
+=== RUN   TestReadyAndAvailableReplicas
+--- PASS: TestReadyAndAvailableReplicas (4.47s)
+=== RUN   TestRCScaleSubresource
+--- PASS: TestRCScaleSubresource (5.69s)
+=== RUN   TestExtraPodsAdoptionAndDeletion
+--- PASS: TestExtraPodsAdoptionAndDeletion (4.78s)
+=== RUN   TestFullyLabeledReplicas
+--- PASS: TestFullyLabeledReplicas (4.43s)
+=== RUN   TestScaleSubresources
+--- FAIL: TestScaleSubresources (32.56s)
+
+=== RUN   TestSchedulerExtender
+--- PASS: TestSchedulerExtender (6.96s)
+=== RUN   TestPreFilterPlugin
+--- PASS: TestPreFilterPlugin (4.68s)
+=== RUN   TestScorePlugin
+--- PASS: TestScorePlugin (4.50s)
+=== RUN   TestNormalizeScorePlugin
+--- PASS: TestNormalizeScorePlugin (4.31s)
+=== RUN   TestReservePlugin
+--- PASS: TestReservePlugin (4.25s)
+=== RUN   TestPrebindPlugin
+--- PASS: TestPrebindPlugin (4.37s)
+=== RUN   TestUnreservePlugin
+--- PASS: TestUnreservePlugin (4.33s)
+=== RUN   TestBindPlugin
+--- PASS: TestBindPlugin (5.93s)
+=== RUN   TestPostBindPlugin
+--- PASS: TestPostBindPlugin (4.43s)
+=== RUN   TestPermitPlugin
+--- PASS: TestPermitPlugin (10.72s)
+=== RUN   TestMultiplePermitPlugins
+--- PASS: TestMultiplePermitPlugins (4.22s)
+=== RUN   TestPermitPluginsCancelled
+--- PASS: TestPermitPluginsCancelled (4.28s)
+=== RUN   TestCoSchedulingWithPermitPlugin
+--- PASS: TestCoSchedulingWithPermitPlugin (4.79s)
+=== RUN   TestFilterPlugin
+--- PASS: TestFilterPlugin (4.36s)
+=== RUN   TestPreScorePlugin
+--- PASS: TestPreScorePlugin (4.84s)
+=== RUN   TestPreemptWithPermitPlugin
+--- PASS: TestPreemptWithPermitPlugin (4.36s)
+=== RUN   TestNodeResourceLimits
+--- PASS: TestNodeResourceLimits (4.36s)
+=== RUN   TestInterPodAffinity
+--- PASS: TestInterPodAffinity (12.45s)
+=== RUN   TestEvenPodsSpreadPredicate
+=== RUN   TestEvenPodsSpreadPredicate/place_pod_on_a_1/1/0/1_cluster_with_MaxSkew=1,_node-2_is_the_only_fit
+=== RUN   TestEvenPodsSpreadPredicate/place_pod_on_a_2/0/0/1_cluster_with_MaxSkew=2,_node-{1,2,3}_are_good_fits
+=== RUN   TestEvenPodsSpreadPredicate/pod_is_required_to_be_placed_on_zone0,_so_only_node-1_fits
+=== RUN   TestEvenPodsSpreadPredicate/two_constraints:_pod_can_only_be_placed_to_zone-1/node-2
+=== RUN   TestEvenPodsSpreadPredicate/pod_cannot_be_placed_onto_any_node
+=== RUN   TestEvenPodsSpreadPredicate/high_priority_pod_can_preempt_others
+    --- PASS: TestEvenPodsSpreadPredicate/place_pod_on_a_1/1/0/1_cluster_with_MaxSkew=1,_node-2_is_the_only_fit (0.57s)
+    --- PASS: TestEvenPodsSpreadPredicate/place_pod_on_a_2/0/0/1_cluster_with_MaxSkew=2,_node-{1,2,3}_are_good_fits (0.55s)
+    --- PASS: TestEvenPodsSpreadPredicate/pod_is_required_to_be_placed_on_zone0,_so_only_node-1_fits (0.41s)
+    --- PASS: TestEvenPodsSpreadPredicate/two_constraints:_pod_can_only_be_placed_to_zone-1/node-2 (0.71s)
+    --- PASS: TestEvenPodsSpreadPredicate/pod_cannot_be_placed_onto_any_node (0.83s)
+    --- PASS: TestEvenPodsSpreadPredicate/high_priority_pod_can_preempt_others (0.85s)
+=== RUN   TestPreemption
+--- PASS: TestPreemption (11.15s)
+=== RUN   TestDisablePreemption
+--- PASS: TestDisablePreemption (11.09s)
+=== RUN   TestPodPriorityResolution
+=== RUN   TestPodPriorityResolution/SystemNodeCritical_priority_class
+=== RUN   TestPodPriorityResolution/SystemClusterCritical_priority_class
+=== RUN   TestPodPriorityResolution/Invalid_priority_class_should_result_in_error
+--- PASS: TestPodPriorityResolution (5.75s)
+    --- PASS: TestPodPriorityResolution/SystemNodeCritical_priority_class (0.14s)
+    --- PASS: TestPodPriorityResolution/SystemClusterCritical_priority_class (0.13s)
+    --- PASS: TestPodPriorityResolution/Invalid_priority_class_should_result_in_error (0.00s)
+=== RUN   TestPreemptionStarvation
+--- PASS: TestPreemptionStarvation (6.54s)
+=== RUN   TestPreemptionRaces
+--- FAIL: TestPreemptionRaces (34.34s)
+=== RUN   TestNominatedNodeCleanUp
+--- FAIL: TestNominatedNodeCleanUp (35.22s)
+=== RUN   TestPDBInPreemption
+--- PASS: TestPDBInPreemption (18.48s)
+=== RUN   TestNodeAffinity
+--- PASS: TestNodeAffinity (5.76s)
+=== RUN   TestPodAffinity
+--- PASS: TestPodAffinity (5.30s)
+=== RUN   TestImageLocality
+--- PASS: TestImageLocality (4.47s)
+--- PASS: TestEvenPodsSpreadPriority (8.49s)
+    --- PASS: TestEvenPodsSpreadPriority/place_pod_on_a_~0~/1/2/3_cluster_with_MaxSkew=1,_node-1_is_the_preferred_fit (1.01s)
+    --- PASS: TestEvenPodsSpreadPriority/combined_with_hardSpread_constraint_on_a_~4~/0/1/2_cluster (1.12s)
+=== RUN   TestSchedulerCreationFromConfigMap
+--- PASS: TestSchedulerCreationFromConfigMap (6.19s)
+=== RUN   TestSchedulerCreationFromNonExistentConfigMap
+--- PASS: TestSchedulerCreationFromNonExistentConfigMap (4.05s)
+=== RUN   TestSchedule100Node3KPods
+--- SKIP: TestSchedule100Node3KPods (0.00s)
+=== RUN   TestSecrets
+--- PASS: TestSecrets (5.26s)
+=== RUN   TestServiceAccountAutoCreate
+--- PASS: TestServiceAccountAutoCreate (8.81s)
+=== RUN   TestServiceAccountTokenAutoCreate
+--- PASS: TestServiceAccountTokenAutoCreate (13.16s)
+=== RUN   TestServiceAccountTokenAutoMount
+--- FAIL: TestServiceAccountTokenAutoMount (14.73s)
+=== RUN   TestServiceAccountTokenAuthentication
+--- PASS: TestServiceAccountTokenAuthentication (40.24s)
+=== RUN   TestComponentSecureServingAndAuth
+--- FAIL: TestComponentSecureServingAndAuth (32.64s)
+=== RUN   TestVolumeTemplateNoopUpdate
+--- FAIL: TestVolumeTemplateNoopUpdate (32.28s)
+=== RUN   TestSpecReplicasChange
+--- PASS: TestSpecReplicasChange (6.88s)
+=== RUN   TestDeletingAndFailedPods
+--- PASS: TestDeletingAndFailedPods (4.90s)
 === RUN   TestStorageClasses
---- PASS: TestStorageClasses (4.44s)
+--- PASS: TestStorageClasses (5.13s)
 === RUN   TestAPICiphers
---- FAIL: TestAPICiphers (32.06s)
+--- PASS: TestAPICiphers (8.96s)
 === RUN   TestTTLAnnotations
---- FAIL: TestTTLAnnotations (34.72s)
+--- FAIL: TestTTLAnnotations (35.56s)
 === RUN   TestPodDeletionWithDswp
---- FAIL: TestPodDeletionWithDswp (504.72s)
+--- PASS: TestPodDeletionWithDswp (6.78s)
 === RUN   TestPodUpdateWithWithADC
---- PASS: TestPodUpdateWithWithADC (5.54s)
+--- PASS: TestPodUpdateWithWithADC (5.41s)
 === RUN   TestPodUpdateWithKeepTerminatedPodVolumes
---- PASS: TestPodUpdateWithKeepTerminatedPodVolumes (5.14s)
+--- PASS: TestPodUpdateWithKeepTerminatedPodVolumes (5.11s)
 === RUN   TestPodAddedByDswp
---- PASS: TestPodAddedByDswp (7.53s)
+--- PASS: TestPodAddedByDswp (7.16s)
 === RUN   TestPVCBoundWithADC
---- PASS: TestPVCBoundWithADC (19.56s)
+--- PASS: TestPVCBoundWithADC (19.82s)
 === RUN   TestPersistentVolumeRecycler
---- PASS: TestPersistentVolumeRecycler (5.19s)
+--- PASS: TestPersistentVolumeRecycler (5.16s)
 === RUN   TestPersistentVolumeDeleter
---- PASS: TestPersistentVolumeDeleter (5.37s)
+--- PASS: TestPersistentVolumeDeleter (5.14s)
 === RUN   TestPersistentVolumeBindRace
---- PASS: TestPersistentVolumeBindRace (5.56s)
+--- PASS: TestPersistentVolumeBindRace (6.22s)
 === RUN   TestPersistentVolumeClaimLabelSelector
---- PASS: TestPersistentVolumeClaimLabelSelector (5.23s)
+--- PASS: TestPersistentVolumeClaimLabelSelector (5.07s)
 === RUN   TestPersistentVolumeClaimLabelSelectorMatchExpressions
---- PASS: TestPersistentVolumeClaimLabelSelectorMatchExpressions (5.44s)
+--- PASS: TestPersistentVolumeClaimLabelSelectorMatchExpressions (5.42s)
 === RUN   TestPersistentVolumeMultiPVs
---- PASS: TestPersistentVolumeMultiPVs (6.16s)
+--- PASS: TestPersistentVolumeMultiPVs (7.47s)
 === RUN   TestPersistentVolumeMultiPVsPVCs
+panic: test timed out after 10m0s
 === RUN   TestVolumeBinding
---- FAIL: TestVolumeBinding (34.93s)
+--- FAIL: TestVolumeBinding (43.39s)
 === RUN   TestVolumeBindingRescheduling
---- FAIL: TestVolumeBindingRescheduling (125.52s)
+--- PASS: TestVolumeBindingRescheduling (17.42s)
 === RUN   TestVolumeBindingStress
-=== RUN   TestAPIApproval
---- FAIL: TestAPIApproval (31.12s)
-=== RUN   TestApplyBasic
---- FAIL: TestApplyBasic (31.67s)
-=== RUN   TestServerUp
---- PASS: TestServerUp (1.07s)
-=== RUN   TestNamespaceScopedCRUD
---- FAIL: TestNamespaceScopedCRUD (31.09s)
-=== RUN   TestClusterScopedCRUD
---- FAIL: TestClusterScopedCRUD (31.08s)
-=== RUN   TestInvalidCRUD
---- FAIL: TestInvalidCRUD (31.09s)
-=== RUN   TestDiscovery
---- FAIL: TestDiscovery (31.24s)
-=== RUN   TestNoNamespaceReject
---- FAIL: TestNoNamespaceReject (31.14s)
-=== RUN   TestSameNameDiffNamespace
---- FAIL: TestSameNameDiffNamespace (31.18s)
-=== RUN   TestSelfLink
---- FAIL: TestSelfLink (31.03s)
-=== RUN   TestPreserveInt
---- FAIL: TestPreserveInt (31.12s)
-=== RUN   TestPatch
---- FAIL: TestPatch (6.56s)
-=== RUN   TestCrossNamespaceListWatch
---- FAIL: TestCrossNamespaceListWatch (6.61s)
-=== RUN   TestNameConflict
---- FAIL: TestNameConflict (6.66s)
-=== RUN   TestStatusGetAndPatch
---- FAIL: TestStatusGetAndPatch (6.61s)
-=== RUN   TestChangeCRD
---- FAIL: TestChangeCRD (6.63s)
-=== RUN   TestCustomResourceDefaultingWithWatchCache
---- FAIL: TestCustomResourceDefaultingWithWatchCache (6.63s)
-=== RUN   TestCustomResourceDefaultingWithoutWatchCache
---- FAIL: TestCustomResourceDefaultingWithoutWatchCache (6.59s)
-=== RUN   TestCustomResourceDefaultingOfMetaFields
---- FAIL: TestCustomResourceDefaultingOfMetaFields (6.59s)
-=== RUN   TestFinalization
---- FAIL: TestFinalization (6.56s)
-=== RUN   TestFinalizationAndDeletion
---- FAIL: TestFinalizationAndDeletion (6.65s)
-=== RUN   TestLimits
---- FAIL: TestLimits (6.64s)
-=== RUN   TestListTypes
---- FAIL: TestListTypes (20.37s)
-=== RUN   TestWebhookConverterWithWatchCache
---- FAIL: TestWebhookConverterWithWatchCache (31.12s)
-=== RUN   TestWebhookConverterWithoutWatchCache
---- FAIL: TestWebhookConverterWithoutWatchCache (31.46s)
+--- FAIL: TestVolumeBindingStress (488.10s)
+=== RUN   TestVolumeBindingStressWithSchedulerResync
+panic: test timed out after 10m0s
 ```
