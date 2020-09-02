@@ -273,7 +273,12 @@ cluster.
 The watch lifecycle begins from a watch registration on a watch agent, upon which a client provides a ``start version`` 
 for the watch and the watched key range. As updates are applied to the KV storage, watch agents track the safe 
 notification intervals and send the updates to watch clients. Safe intervals' definition depends on the version 
-counter update mechanics.
+counter update mechanics. According to the ETCD semantics, each individual update receives a unique ``mod_revision``. 
+At the same time, a multi-key transaction is considered to be a single update thus multiple key-value pairs will receive
+the same ``mod_revision`` (the ``mod_revision`` remains to be unique across other update operations). We can exploit
+this property combined with the multi-versioning to ensure transactional watch updates. A `SELECT` of all updates
+ordered by ``mod_version`` form a stream of transactional updates history where each transaction is a set of keys 
+sharing the same ``mod_version``. The implementation with Ignite SQL is quite straightforward.
 
 The ongoing updates can be delivered to the watch agents both via Ignite Continuous Queries and accumulated in-memory
 (in case when the watch client keeps up with the update rate), or obtained in batches via SQL queries based on version
