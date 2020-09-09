@@ -284,9 +284,10 @@ The ongoing updates can be delivered to the watch agents both via Ignite Continu
 (in case when the watch client keeps up with the update rate), or obtained in batches via SQL queries based on version
 ranges.
 # Implementing Multi-Versioning in Shim
-Shim layer implements multi-version ETCD-like key-value store in Ignite by embedding the modification version in 
-Ignite key. For better performance, shim maintains both the storage of the latest (actual) key-value pairs, and 
-historical storage allowing shim to read in the past.
+Ignite does not yet support MVCC natively, and ETCD exposes multiple versions of the same key via an API. To facilitate 
+this behavior, shim layer implements multi-version ETCD-like key-value store in Ignite on application level by embedding
+the modification version in Ignite key. For better performance, shim maintains both the storage of the latest (actual) 
+key-value pairs, and historical storage allowing shim to read in the past.
 
 The data model for the key-value pairs is as follows:
     
