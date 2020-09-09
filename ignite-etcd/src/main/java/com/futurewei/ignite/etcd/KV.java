@@ -492,11 +492,14 @@ public final class KV {
             long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
             res.setCount(cnt);
         } else {
+            // Request limit + 1 entries to check if there are more entries matching the specified condition
+            long limitPlus = limit > 0 ? limit + 1 : limit;
+
             Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
                 txModifiesKey,
                 start,
                 end,
-                limit,
+                limitPlus,
                 rev,
                 minModRev,
                 maxModRev,
@@ -507,8 +510,16 @@ public final class KV {
                 sortTarget
             );
 
-            res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
-                .setCount(kvs.size());
+            boolean more = limit > 0 && kvs.size() > limit;
+
+            if (more) {
+                long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
+                res.addAllKvs(kvs.stream().limit(limit).map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
+                    .setCount(cnt)
+                    .setMore(true);
+            } else
+                res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
+                    .setCount(kvs.size());
         }
 
         if (log.isTraceEnabled()) {
