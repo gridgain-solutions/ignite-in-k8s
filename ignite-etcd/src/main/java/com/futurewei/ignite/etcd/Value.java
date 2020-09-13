@@ -1,9 +1,13 @@
 package com.futurewei.ignite.etcd;
 
-public final class Value extends HistoricalValue {
+import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.binary.BinaryReader;
+import org.apache.ignite.binary.BinaryWriter;
+
+public class Value extends HistoricalValue {
     private static final long serialVersionUID = 1L;
 
-    private final long modRev;
+    private long modRev;
 
     Value(byte[] val, long crtRev, long modRev, long ver, long lease) {
         super(val, crtRev, ver, lease);
@@ -20,5 +24,17 @@ public final class Value extends HistoricalValue {
      */
     long modifyRevision() {
         return modRev;
+    }
+
+    @Override
+    public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
+        super.writeBinary(writer);
+        writer.writeLong("modRev", modRev);
+    }
+
+    @Override
+    public void readBinary(BinaryReader reader) throws BinaryObjectException {
+        super.readBinary(reader);
+        modRev = reader.readLong("modRev");
     }
 }

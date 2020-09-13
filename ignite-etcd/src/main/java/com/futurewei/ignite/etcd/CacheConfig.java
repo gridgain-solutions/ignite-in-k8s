@@ -6,7 +6,9 @@ import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.QueryIndex;
 import org.apache.ignite.configuration.CacheConfiguration;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public final class CacheConfig {
@@ -45,7 +47,7 @@ public final class CacheConfig {
      * to {@link #KVSpec}.
      */
     static CacheConfiguration<Key, Value> KV(String cacheName) {
-        return new CacheConfiguration<Key, Value>(cacheName)
+        return TextKV.extend(new CacheConfiguration<Key, Value>(cacheName)
             .setCacheMode(CacheMode.PARTITIONED)
             .setBackups(1)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
@@ -59,9 +61,9 @@ public final class CacheConfig {
                     .addQueryField("crtRev", long.class.getName(), "CREATE_REVISION")
                     .addQueryField("ver", long.class.getName(), "VERSION")
                     .addQueryField("lease", long.class.getName(), null)
-                    .setKeyFields(Set.of("key"))
+                    .setKeyFields(new LinkedHashSet<>(Collections.singletonList("key"))) // use modifiable Set
                     .setIndexes(Collections.singletonList(new QueryIndex("lease")))
-            ));
+            )));
     }
 
     /**
@@ -69,7 +71,7 @@ public final class CacheConfig {
      * to {@link #KVHistorySpec}.
      */
     static CacheConfiguration<HistoricalKey, HistoricalValue> KVHistory(String cacheName) {
-        return new CacheConfiguration<HistoricalKey, HistoricalValue>(cacheName)
+        return TextKV.extend(new CacheConfiguration<HistoricalKey, HistoricalValue>(cacheName)
             .setCacheMode(CacheMode.PARTITIONED)
             .setBackups(1)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
@@ -83,8 +85,8 @@ public final class CacheConfig {
                     .addQueryField("crtRev", long.class.getName(), "CREATE_REVISION")
                     .addQueryField("ver", long.class.getName(), "VERSION")
                     .addQueryField("lease", long.class.getName(), null)
-                    .setKeyFields(Set.of("key", "modRev"))
-            ));
+                    .setKeyFields(new LinkedHashSet<>(Arrays.asList("key", "modRev"))) // use modifiable Set
+            )));
     }
 
     /**
