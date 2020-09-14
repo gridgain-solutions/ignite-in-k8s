@@ -15,12 +15,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -37,11 +32,6 @@ public final class Lease {
     private final IgniteCache<Key, Value> kvCache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
     private final EtcdCluster ctx;
-
-    private static final ExecutorService keepAliveExec = Executors.newFixedThreadPool(
-        Runtime.getRuntime().availableProcessors(),
-        new NamedThreadFactory()
-    );
 
     public Lease(Ignite ignite, String cacheName, String kvCacheName, String histCacheName) {
         cache = ignite.getOrCreateCache(CacheConfig.Lease(cacheName));
@@ -77,9 +67,7 @@ public final class Lease {
         return res.build();
     }
 
-    /**
-     * Revokes a lease. All keys attached to the lease will expire and be deleted.
-     */
+    /** Revokes a lease. All keys attached to the lease will expire and be deleted. */
     public Rpc.LeaseRevokeResponse leaseRevoke(Rpc.LeaseRevokeRequest req) {
         long id = req.getID();
 
@@ -106,10 +94,7 @@ public final class Lease {
      * Keeps the lease alive by streaming keep alive requests from the client to the server and streaming keep alive
      * responses from the server to the client.
      */
-    public CompletableFuture<?> leaseKeepAlive(
-        Rpc.LeaseKeepAliveRequest req,
-        Consumer<Rpc.LeaseKeepAliveResponse> resConsumer
-    ) {
+    public void leaseKeepAlive(Rpc.LeaseKeepAliveRequest req, Consumer<Rpc.LeaseKeepAliveResponse> resConsumer) {
         long id = req.getID();
 
         Rpc.LeaseKeepAliveResponse.Builder res = Rpc.LeaseKeepAliveResponse.newBuilder()
@@ -120,18 +105,16 @@ public final class Lease {
         if (ttl == null)
             throw new IllegalArgumentException("Lease does not exist: " + String.format("%16x", id));
 
-        Runnable keepAlive = () -> {
-            resetTtl(kvCache, id, ttl);
-            resetTtl(histCache, id, ttl);
+        resetTtl(kvCache, id, ttl);
+        resetTtl(histCache, id, ttl);
 
-            res.setID(id).setTTL(ttl);
+        if (log.isTraceEnabled())
+            log.trace("Kept lease " + String.format("%16x", id) + " alive");
 
-            resConsumer.accept(res.build());
-        };
-
-        return CompletableFuture.runAsync(keepAlive, keepAliveExec);
+        resConsumer.accept(res.setID(id).setTTL(ttl).build());
     }
 
+    /** Retrieves lease information. */
     public Rpc.LeaseTimeToLiveResponse leaseTimeToLive(Rpc.LeaseTimeToLiveRequest req) {
         long id = req.getID();
         boolean listKeys = req.getKeys();
@@ -144,7 +127,7 @@ public final class Lease {
         if (grantedTtl != null) {
             long ttl = grantedTtl; // TODO: KV lease management
 
-            res.setID(id).setGrantedTTL(grantedTtl).setTTL(ttl);
+            res.setID(id).setTTL(ttl).setGrantedTTL(grantedTtl);
 
             if (listKeys) {
                 SqlFieldsQuery q = new SqlFieldsQuery("SELECT KEY FROM ETCD_KV WHERE LEASE = ?").setArgs(id);
@@ -157,6 +140,7 @@ public final class Lease {
         return res.build();
     }
 
+    /** Lists all existing leases. */
     public Rpc.LeaseLeasesResponse leaseLeases(Rpc.LeaseLeasesRequest ignored) {
         Rpc.LeaseLeasesResponse.Builder res = Rpc.LeaseLeasesResponse.newBuilder()
             .setHeader(EtcdCluster.getHeader(ctx.revision()));
@@ -173,7 +157,7 @@ public final class Lease {
             new SqlFieldsQuery("SELECT _KEY FROM " + cache.getName() + " WHERE LEASE = ?").setArgs(lease)
         ).getAll()
             .stream()
-            .map(i -> (K) i)
+            .map(i -> (K) i.iterator().next())
             .collect(Collectors.toSet());
 
         if (!keys.isEmpty()) {
@@ -185,28 +169,5 @@ public final class Lease {
 
     private static class Random {
         static final SecureRandom instance = new SecureRandom();
-    }
-
-    private static class NamedThreadFactory implements ThreadFactory {
-        private static final String namePrefix = "etcd-lease-keep";
-        private final ThreadGroup group;
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-
-        NamedThreadFactory() {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-        }
-
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r, namePrefix  + "-" + threadNumber.getAndIncrement(), 0);
-
-            if (t.isDaemon())
-                t.setDaemon(false);
-
-            if (t.getPriority() != Thread.NORM_PRIORITY)
-                t.setPriority(Thread.NORM_PRIORITY);
-
-            return t;
-        }
     }
 }
