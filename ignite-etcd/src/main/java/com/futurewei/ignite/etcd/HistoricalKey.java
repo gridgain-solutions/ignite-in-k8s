@@ -1,18 +1,34 @@
 package com.futurewei.ignite.etcd;
 
+import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.binary.BinaryReader;
+import org.apache.ignite.binary.BinaryWriter;
+
 import java.util.Objects;
 
 /**
  * {@link Key} with {@link #modifyRevision()}.
  */
-public final class HistoricalKey extends Key {
+public class HistoricalKey extends Key {
     private static final long serialVersionUID = 1L;
 
-    private final long modRev;
+    private long modRev;
 
     HistoricalKey(Key key, long modRev) {
         super(key.key());
         this.modRev = modRev;
+    }
+
+    @Override
+    public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
+        super.writeBinary(writer);
+        writer.writeLong("modRev", modRev);
+    }
+
+    @Override
+    public void readBinary(BinaryReader reader) throws BinaryObjectException {
+        super.readBinary(reader);
+        modRev = reader.readLong("modRev");
     }
 
     @Override

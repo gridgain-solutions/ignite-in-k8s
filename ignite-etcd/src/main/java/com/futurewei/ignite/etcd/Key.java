@@ -1,12 +1,17 @@
 package com.futurewei.ignite.etcd;
 
+import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.binary.BinaryReader;
+import org.apache.ignite.binary.BinaryWriter;
+import org.apache.ignite.binary.Binarylizable;
+
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class Key implements Serializable {
+public class Key implements Binarylizable, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final byte[] key;
+    private byte[] key;
 
     Key(byte[] key) {
         this.key = key;
@@ -34,5 +39,18 @@ public class Key implements Serializable {
 
     boolean isZero() {
         return key[0] == 0;
+    }
+
+    @Override
+    public void writeBinary(BinaryWriter writer) throws BinaryObjectException {
+        writer.writeByteArray("key", key);
+
+        if (TextKV.isEnabled)
+            TextKV.writeBinary(this, writer);
+    }
+
+    @Override
+    public void readBinary(BinaryReader reader) throws BinaryObjectException {
+        key = reader.readByteArray("key");
     }
 }
