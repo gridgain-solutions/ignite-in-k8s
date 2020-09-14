@@ -5,11 +5,15 @@ import etcdserverpb.Rpc;
 import io.grpc.stub.StreamObserver;
 import org.apache.ignite.Ignite;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
 public final class Lease extends LeaseGrpc.LeaseImplBase {
     private final com.futurewei.ignite.etcd.Lease impl;
 
-    public Lease(Ignite ignite, String cacheName, String kvCacheName) {
-        impl = new com.futurewei.ignite.etcd.Lease(ignite, cacheName, kvCacheName);
+    public Lease(Ignite ignite, String cacheName, String kvCacheName, String histCacheName) {
+        impl = new com.futurewei.ignite.etcd.Lease(ignite, cacheName, kvCacheName, histCacheName);
     }
 
     @Override
@@ -27,14 +31,17 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
     @Override
     public StreamObserver<Rpc.LeaseKeepAliveRequest> leaseKeepAlive(StreamObserver<Rpc.LeaseKeepAliveResponse> res) {
         return new StreamObserver<>() {
+            private CompletableFuture<?> keepAlive = null;
+
             @Override
             public void onNext(Rpc.LeaseKeepAliveRequest req) {
-                impl.leaseKeepAlive(req, res::onNext);
+                keepAlive = impl.leaseKeepAlive(req, res::onNext);
             }
 
             @Override
             public void onError(Throwable ignored) {
-                // Nothing to cancel
+                if (keepAlive != null)
+                    keepAlive.cancel(true);
             }
 
             @Override

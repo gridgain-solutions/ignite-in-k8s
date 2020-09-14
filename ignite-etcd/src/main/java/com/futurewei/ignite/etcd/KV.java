@@ -14,6 +14,9 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionOptimisticException;
 
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -32,16 +36,18 @@ public final class KV {
     private static final int TX_TIMEOUT = Integer.parseInt(System.getProperty("TX_TIMEOUT", "0"));
 
     private final Ignite ignite;
-    private final IgniteCache<Key, Value> cache;
     private final IgniteLogger log;
+    private final IgniteCache<Key, Value> cache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
+    private final IgniteCache<Long, Long> leaseCache;
     private final EtcdCluster ctx;
 
-    public KV(Ignite ignite, String cacheName, String histCacheName) {
+    public KV(Ignite ignite, String cacheName, String histCacheName, String leaseCacheName) {
         this.ignite = ignite;
-        cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
         log = ignite.log();
+        cache = ignite.getOrCreateCache(CacheConfig.KV(cacheName));
         histCache = ignite.getOrCreateCache(CacheConfig.KVHistory(histCacheName));
+        leaseCache = ignite.getOrCreateCache(CacheConfig.Lease(leaseCacheName));
         ctx = new EtcdCluster(ignite);
     }
 
@@ -559,8 +565,26 @@ public final class KV {
 
             HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
 
-            cache.put(k, new Value(hVal, rev));
-            histCache.put(new HistoricalKey(k, rev), hVal);
+            IgniteCache<Key, Value> leasedCache;
+            IgniteCache<HistoricalKey, HistoricalValue> leasedHistCache;
+
+            if (lease == 0) {
+                leasedCache = cache;
+                leasedHistCache = histCache;
+            } else {
+                Long ttl = leaseCache.get(lease);
+
+                if (ttl == null)
+                    throw new IllegalArgumentException("Lease does not exist: " + String.format("%16x", lease));
+
+                ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl));
+
+                leasedCache = cache.withExpiryPolicy(expPlc);
+                leasedHistCache = histCache.withExpiryPolicy(expPlc);
+            }
+
+            leasedCache.put(k, new Value(hVal, rev));
+            leasedHistCache.put(new HistoricalKey(k, rev), hVal);
 
             if (log.isTraceEnabled())
                 log.trace(
@@ -568,6 +592,7 @@ public final class KV {
                         ", value: " + reqVal.toStringUtf8() +
                         ", ver: " + ver +
                         ", rev: " + rev +
+                        ", lease: " + lease + " / " + String.format("%16x", lease) +
                         "}"
                 );
         } else
