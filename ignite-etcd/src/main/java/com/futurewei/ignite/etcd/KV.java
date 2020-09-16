@@ -314,7 +314,7 @@ public final class KV {
         Rpc.RangeRequest.SortOrder sortOrder,
         Rpc.RangeRequest.SortTarget sortTarget
     ) {
-        if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
+        if (rev <= 0 && minModRev <= 0 && maxModRev <= 0 && minCrtRev <= 0 && maxCrtRev <= 0) {
             if (!start.isZero() && end == null) {
                 // Optimization for getting single entry without filtering
                 Value v = noPayload ? getWithoutPayload(start, txModifiesKey) : cache.get(start);
@@ -322,9 +322,11 @@ public final class KV {
                 return v == null
                     ? Collections.emptyList()
                     : Collections.singletonList(new SimpleImmutableEntry<>(start, v));
-            } else if (!noPayload && start.isZero() && end.isZero() && limit <= 0 &&
-                sortOrder == Rpc.RangeRequest.SortOrder.NONE
-            ) {
+            } else if (!noPayload &&
+                start.isZero() &&
+                end.isZero() &&
+                limit <= 0 &&
+                sortOrder == Rpc.RangeRequest.SortOrder.NONE) {
                 // Optimization for getting all entries with payload without filtering, sorting and limit
                 return cache.query(new ScanQuery<Key, Value>()).getAll().stream()
                     .map(e -> new SimpleImmutableEntry<>(e.getKey(), e.getValue()))
@@ -356,6 +358,8 @@ public final class KV {
 
         if (!sqlSort.isEmpty())
             sql.append("\nORDER BY ").append(sqlSort);
+        else if (limit > 0)
+            sql.append("\nORDER BY KEY").append(sqlSort);
 
         if (limit > 0) {
             sql.append("\nLIMIT ?");
@@ -381,7 +385,7 @@ public final class KV {
     }
 
     private long count(Key start, Key end, long rev, long minModRev, long maxModRev, long minCrtRev, long maxCrtRev) {
-        if (allZeroOrNegative(rev, minModRev, maxModRev, minCrtRev, maxCrtRev)) {
+        if (rev <= 0 && minModRev <= 0 && maxModRev <= 0 && minCrtRev <= 0 && maxCrtRev <= 0) {
             if (!start.isZero() && end == null)
                 // Optimization for a popular case to check single entry without filtering
                 return cache.containsKey(start) ? 1 : 0;
@@ -491,6 +495,27 @@ public final class KV {
         // will be filtered away.
         long maxCrtRev = req.getMaxCreateRevision();
 
+        if (log.isTraceEnabled()) {
+            StringBuilder s = new StringBuilder("RangeRequest {")
+                .append("key: ").append(key.toStringUtf8());
+            if (!rangeEnd.isEmpty())
+                s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
+            if (cntOnly)
+                s.append(", countOnly: true");
+            if (keysOnly)
+                s.append(", keysOnly: true");
+            if (rev > 0)
+                s.append(", rev: ").append(rev);
+            if (limit > 0)
+                s.append(", limit: ").append(limit);
+            if (sortOrder != Rpc.RangeRequest.SortOrder.NONE) {
+                s.append(", sortOrder: ").append(sortOrder);
+                s.append(", sortTarget: ").append(sortTarget);
+            }
+            s.append("}");
+            log.trace(s.toString());
+        }
+
         Key start = key.isEmpty() ? null : new Key(key.toByteArray());
         Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
 
@@ -498,14 +523,11 @@ public final class KV {
             long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
             res.setCount(cnt);
         } else {
-            // Request limit + 1 entries to check if there are more entries matching the specified condition
-            long limitPlus = limit > 0 ? limit + 1 : limit;
-
             Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
                 txModifiesKey,
                 start,
                 end,
-                limitPlus,
+                limit,
                 rev,
                 minModRev,
                 maxModRev,
@@ -516,31 +538,25 @@ public final class KV {
                 sortTarget
             );
 
-            boolean more = limit > 0 && kvs.size() > limit;
-
-            if (more) {
+            if (limit > 0) {
                 long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
-                res.addAllKvs(kvs.stream().limit(limit).map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
+                res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
                     .setCount(cnt)
-                    .setMore(true);
+                    .setMore(cnt > kvs.size());
             } else
                 res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
                     .setCount(kvs.size());
-        }
 
-        if (log.isTraceEnabled()) {
-            StringBuilder s = new StringBuilder("Range {")
-                .append("key: ").append(key.toStringUtf8());
-            if (end != null)
-                s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
-            if (cntOnly)
-                s.append(", countOnly: true");
-            if (rev > 0)
-                s.append(", rev: ").append(rev);
-            if (limit > 0)
-                s.append(", limit: ").append(limit);
-            s.append("}");
-            log.trace(s.toString());
+            if (log.isTraceEnabled())
+                log.trace(
+                    "RangeResponse {keys: [" +
+                        String.join(
+                            ", ",
+                            kvs.stream()
+                                .map(kv -> ByteString.copyFrom(kv.getKey().key()).toStringUtf8())
+                                .toArray(String[]::new)
+                        ) + "]" + (res.getMore() ? ", more: true" : "") + "}"
+                );
         }
 
         return res.build();
@@ -553,6 +569,15 @@ public final class KV {
         ByteString reqKey = req.getKey();
         ByteString reqVal = req.getValue();
         long lease = req.getLease();
+
+        if (log.isTraceEnabled())
+            log.trace(
+                "PutRequest {key: " + reqKey.toStringUtf8() +
+                    ", value: " + reqVal.toStringUtf8() +
+                    ", lease: " + lease + " / " + String.format("%16x", lease) +
+                    "}"
+            );
+
         long rev;
 
         if (!reqKey.isEmpty() && !reqVal.isEmpty()) {
@@ -585,16 +610,6 @@ public final class KV {
 
             leasedCache.put(k, new Value(hVal, rev));
             leasedHistCache.put(new HistoricalKey(k, rev), hVal);
-
-            if (log.isTraceEnabled())
-                log.trace(
-                    "Put {key: " + reqKey.toStringUtf8() +
-                        ", value: " + reqVal.toStringUtf8() +
-                        ", ver: " + ver +
-                        ", rev: " + rev +
-                        ", lease: " + lease + " / " + String.format("%16x", lease) +
-                        "}"
-                );
         } else
             rev = ctx.revision();
 
@@ -692,10 +707,6 @@ public final class KV {
             res.addAllResponses(resList);
 
         return res.build();
-    }
-
-    private static boolean allZeroOrNegative(long n1, long n2, long n3, long n4, long n5) {
-        return n1 <= 0 && n2 <= 0 && n3 <= 0 && n4 <= 0 && n5 <= 0;
     }
 
     private static String sqlFilter(

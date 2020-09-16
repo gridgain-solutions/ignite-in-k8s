@@ -3,8 +3,6 @@
 ## Failures  
 | Test | Failure Cause
 | -----|--------------
-| `apiserver/TestListResourceVersion0/watchCacheOff` | [Paging in KV/range](https://github.com/gridgain-solutions/ignite-in-k8s/issues/24)
-| `apiserver/TestAPIListChunking` | [Paging in KV/range](https://github.com/gridgain-solutions/ignite-in-k8s/issues/24)
 | `apiserver/TestMetadataClient` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
 | `apiserver/TestAPICRDProtobuf` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
 | `apiserver/TestTransform` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
@@ -118,11 +116,11 @@
 === RUN   TestListResourceVersion0
 === RUN   TestListResourceVersion0/watchCacheOn
 === RUN   TestListResourceVersion0/watchCacheOff
---- FAIL: TestListResourceVersion0 (10.62s)
-    --- PASS: TestListResourceVersion0/watchCacheOn (5.49s)
-    --- FAIL: TestListResourceVersion0/watchCacheOff (5.13s)
+--- PASS: TestListResourceVersion0 (14.22s)
+    --- PASS: TestListResourceVersion0/watchCacheOn (7.18s)
+    --- PASS: TestListResourceVersion0/watchCacheOff (7.05s)
 === RUN   TestAPIListChunking
---- FAIL: TestAPIListChunking (5.11s)
+--- PASS: TestAPIListChunking (7.47s)
 === RUN   TestNameInFieldSelector
 --- PASS: TestNameInFieldSelector (5.67s)
 === RUN   TestMetadataClient
