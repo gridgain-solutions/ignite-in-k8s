@@ -45,6 +45,6 @@ final class TextKV {
         if (!isEnabled)
             return;
 
-        writer.writeString("sval", ByteString.copyFrom(v.value()).toStringUtf8());
+        writer.writeString("sval", v.value() == null ? null : ByteString.copyFrom(v.value()).toStringUtf8());
     }
 }
