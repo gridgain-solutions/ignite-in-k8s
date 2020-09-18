@@ -2,6 +2,8 @@ package com.futurewei.ignite.etcd.grpc;
 
 import etcdserverpb.KVGrpc;
 import etcdserverpb.Rpc;
+import io.grpc.Status;
+import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import org.apache.ignite.Ignite;
 
@@ -38,7 +40,13 @@ public final class KV extends KVGrpc.KVImplBase {
 
     @Override
     public void compact(Rpc.CompactionRequest req, StreamObserver<Rpc.CompactionResponse> res) {
-        res.onNext(impl.compact(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.compact(req));
+            res.onCompleted();
+        } catch (IndexOutOfBoundsException ex) {
+            res.onError(new StatusException(Status.OUT_OF_RANGE.withDescription(ex.getMessage())));
+        } catch (Throwable t) {
+            res.onError(t);
+        }
     }
 }

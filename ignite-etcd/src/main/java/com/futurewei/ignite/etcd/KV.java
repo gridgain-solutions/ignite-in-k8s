@@ -67,8 +67,38 @@ public final class KV {
         return transaction(60000, 0, () -> txnNonTx(req));
     }
 
+    /**
+     * Compacts the event history in the etcd key-value store. The key-value store should be periodically compacted
+     * or the event history will continue to grow indefinitely.
+     *
+     * @throws IndexOutOfBoundsException if the specified revision does not exist.
+     */
     public Rpc.CompactionResponse compact(Rpc.CompactionRequest req) {
-        // TODO: compaction
+        // the key-value store revision for the compaction operation
+        long compactRev = req.getRevision();
+
+        long rev = ctx.revision();
+
+        if (compactRev == rev)
+            compactRev = rev - 1;
+
+        if (compactRev > rev)
+            throw new IndexOutOfBoundsException("Required revision is a future revision");
+        else if (compactRev > 0) {
+            Long delCnt = (Long) histCache.query(
+                new SqlFieldsQuery(new SqlFieldsQuery("DELETE FROM ETCD_KV_HISTORY WHERE MODIFY_REVISION <= ?")
+                    .setArgs(compactRev))
+            ).getAll().iterator().next().iterator().next();
+
+            if (delCnt == 0)
+                throw new IndexOutOfBoundsException("Required revision has been compacted");
+
+            if (log.isTraceEnabled())
+                log.trace(
+                    "Compacting revision " + compactRev + " removed " + delCnt + " entries from ETCD_KV_HISTORY"
+                );
+        }
+
         return Rpc.CompactionResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision())).build();
     }
 
@@ -352,7 +382,7 @@ public final class KV {
             sql.append("\nWHERE ").append(sqlFilter);
 
         if (rev > 0) {
-            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION <= ?");
+            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION = ?");
             sqlArgs.add(rev);
         }
 
@@ -406,7 +436,7 @@ public final class KV {
             sql.append("\nWHERE ").append(sqlFilter);
 
         if (rev > 0) {
-            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION <= ?");
+            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION = ?");
             sqlArgs.add(rev);
         }
 
