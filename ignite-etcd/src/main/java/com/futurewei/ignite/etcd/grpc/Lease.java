@@ -26,7 +26,7 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public StreamObserver<Rpc.LeaseKeepAliveRequest> leaseKeepAlive(StreamObserver<Rpc.LeaseKeepAliveResponse> res) {
-        return new StreamObserver<>() {
+        return new StreamObserver<Rpc.LeaseKeepAliveRequest>() {
             @Override
             public void onNext(Rpc.LeaseKeepAliveRequest req) {
                 impl.leaseKeepAlive(req, res::onNext);

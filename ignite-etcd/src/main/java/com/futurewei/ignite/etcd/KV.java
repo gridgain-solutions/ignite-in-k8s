@@ -129,7 +129,7 @@ public final class KV {
         if (txModifiesKey) {
             String cacheName = cache.getName();
 
-            return ignite.compute().affinityCall(cacheName, k, new IgniteCallable<>() {
+            return ignite.compute().affinityCall(cacheName, k, new IgniteCallable<Value>() {
                 @IgniteInstanceResource
                 private Ignite ignite;
 

@@ -10,7 +10,7 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.31.1'
+def grpcVersion = '1.32.1'
 def protobufVersion = '3.13.0'
 
 dependencies {

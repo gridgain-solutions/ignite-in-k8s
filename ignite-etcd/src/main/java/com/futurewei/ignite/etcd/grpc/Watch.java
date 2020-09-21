@@ -19,13 +19,17 @@ public final class Watch extends WatchGrpc.WatchImplBase {
 
     @Override
     public StreamObserver<Rpc.WatchRequest> watch(final StreamObserver<Rpc.WatchResponse> res) {
-        return new StreamObserver<>() {
+        return new StreamObserver<Rpc.WatchRequest>() {
             private final Set<Runnable> cancellations = new HashSet<>();
             private final long id = streamId.getAndIncrement();
 
             @Override
             public void onNext(Rpc.WatchRequest req) {
-                cancellations.add(impl.watch(id, req, res::onNext));
+                cancellations.add(impl.watch(id, req, r -> {
+                    synchronized (res) {
+                        res.onNext(r);
+                    }
+                }));
             }
 
             @Override

@@ -56,6 +56,8 @@ public final class Watch {
      * @return Cancellation routine
      */
     public Runnable watch(long streamId, Rpc.WatchRequest req, Consumer<Rpc.WatchResponse> resConsumer) {
+        Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision()));
+
         if (req.hasCreateRequest()) {
             Rpc.WatchCreateRequest startReq = req.getCreateRequest();
 
@@ -72,13 +74,7 @@ public final class Watch {
                 throw new IllegalStateException("Watcher " + watchId + " already exists for stream " + streamId);
             }
 
-            resConsumer.accept(
-                Rpc.WatchResponse.newBuilder()
-                    .setHeader(EtcdCluster.getHeader(ctx.revision()))
-                    .setWatchId(watchId)
-                    .setCreated(true)
-                    .build()
-            );
+            resConsumer.accept(res.setWatchId(watchId).setCreated(true).build());
 
             return () -> {
                 Watcher w = watchers.remove(id);
@@ -93,14 +89,9 @@ public final class Watch {
             if (w != null)
                 w.cancel();
 
-            resConsumer.accept(
-                Rpc.WatchResponse.newBuilder()
-                    .setHeader(EtcdCluster.getHeader(ctx.revision()))
-                    .setWatchId(watchId)
-                    .setCanceled(true)
-                    .build()
-            );
-        }
+            resConsumer.accept(res.setWatchId(watchId).setCanceled(true).build());
+        } else
+            resConsumer.accept(res.build());
 
         return nop;
     }
@@ -174,7 +165,7 @@ public final class Watch {
             CompletableFuture<?>[] futArr;
             synchronized (reportFuts) {
                 done.countDown();
-                futArr = reportFuts.toArray(CompletableFuture<?>[]::new);
+                futArr = reportFuts.toArray(new CompletableFuture[0]);
             }
 
             await(CompletableFuture.allOf(futArr), 20_000);

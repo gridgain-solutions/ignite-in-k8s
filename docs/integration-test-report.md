@@ -13,7 +13,6 @@
 | `apiserver/apply/TestCreateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestUpdateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestPatchVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `auth/TestNodeAuthorizer` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `certificates/TestCSRSignerNameApprovalPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `certificates/TestCSRSignerNameSigningPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `certificates/TestController_AutoApproval` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
@@ -302,7 +301,7 @@
 === RUN   TestDynamicClientBuilder
 --- PASS: TestDynamicClientBuilder (14.67s)
 === RUN   TestNodeAuthorizer
---- FAIL: TestNodeAuthorizer (31.64s)
+--- PASS: TestNodeAuthorizer (11.08s)
 === RUN   TestRBAC
 --- PASS: TestRBAC (30.25s)
 === RUN   TestBootstrapping

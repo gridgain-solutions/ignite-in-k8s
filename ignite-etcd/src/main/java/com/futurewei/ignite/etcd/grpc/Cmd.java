@@ -21,7 +21,7 @@ public class Cmd {
         final String KV_HIST_CACHE_OPT = "h";
         final String LEASE_CACHE_OPT = "l";
         final String HELP_OPT = "h";
-        final int DFLT_PORT = 2397;
+        final int DFLT_PORT = 2379;
         final String DFLT_KV_CACHE = "etcd_kv";
         final String DFLT_KV_HIST_CACHE = "etcd_kv_history";
         final String DFLT_LEASE_CACHE = "etcd_lease";
