@@ -13,37 +13,18 @@
 | `apiserver/apply/TestCreateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestUpdateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
 | `apiserver/apply/TestPatchVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `certificates/TestCSRSignerNameApprovalPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `certificates/TestCSRSignerNameSigningPlugin` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `certificates/TestController_AutoApproval` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `client/TestAtomicPut` | [PUT not atomic](https://github.com/gridgain-solutions/ignite-in-k8s/issues/40)
 | `client/TestSingleWatch` | [Watch took longer than TIMEOUT](https://github.com/gridgain-solutions/ignite-in-k8s/issues/41)
-| `client/TestSelfLinkOnNamespace` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `client/TestDynamicClient` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `client/TestDynamicClientWatch` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `daemonset/TestSimpleDaemonSetLaunchesPods` | [Apiserver received an error that is not an metav1.Status](https://github.com/gridgain-solutions/ignite-in-k8s/issues/43)
-| `disruption/TestPDBWithScaleSubresource` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `etcd/TestCrossGroupStorage` | [Timed out waiting for watch event for v1 in response to persisting v1](https://github.com/gridgain-solutions/ignite-in-k8s/issues/44)
-| `events/TestEventCompatibility` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `examples/TestAggregatedAPIServer` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `garbagecollector/TestClusterScopedOwners` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `garbagecollector/TestStressingCascadingDeletion` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `garbagecollector/TestOrphaning` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `garbagecollector/TestCustomResourceCascadingDeletion` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `garbagecollector/TestMixedRelationships` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
+| `garbagecollector/TestStressingCascadingDeletion` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
+| `garbagecollector/TestCustomResourceCascadingDeletion` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
+| `garbagecollector/TestMixedRelationships` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
 | `garbagecollector/TestCRDDeletionCascading` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
-| `kubelet/TestWatchBasedManager` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `master/TestAudit` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `master/TestLivezAndReadyz` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `master/TestReconcilerMasterLeaseMultiCombined` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `master/TestSecretsShouldBeTransformed` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `quota/TestQuota` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
-| `scale/TestScaleSubresources` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `scheduler/TestPreemptionRaces` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
 | `scheduler/TestNominatedNodeCleanUp` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
 | `serviceaccount/TestServiceAccountTokenAutoMount` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
-| `serving/TestComponentSecureServingAndAuth` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
-| `statefulset/TestVolumeTemplateNoopUpdate` | [Failed to launch server: failed to wait for /healthz to return ok](https://github.com/gridgain-solutions/ignite-in-k8s/issues/39)
 | `ttlcontroller/TestTTLAnnotations` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
 | `volume/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
 | `volumescheduling/TestVolumeBinding` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
@@ -338,18 +319,18 @@
 === RUN   TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName
 === RUN   TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_wildcard-suffixed_signerName
 === RUN   TestCSRSignerNameApprovalPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName
---- FAIL: TestCSRSignerNameApprovalPlugin (50.56s)
-    --- FAIL: TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName (33.44s)
-    --- PASS: TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_wildcard-suffixed_signerName (8.74s)
-    --- PASS: TestCSRSignerNameApprovalPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName (8.38s)
+--- PASS: TestCSRSignerNameApprovalPlugin (30.82s)
+    --- PASS: TestCSRSignerNameApprovalPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName (10.60s)
+    --- PASS: TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName (10.10s)
+    --- PASS: TestCSRSignerNameApprovalPlugin/should_admit_when_a_user_has_permission_for_the_wildcard-suffixed_signerName (10.12s)
 === RUN   TestCSRSignerNameSigningPlugin
 === RUN   TestCSRSignerNameSigningPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName
 === RUN   TestCSRSignerNameSigningPlugin/should_admit_when_a_user_has_permission_for_the_wildcard-suffixed_signerName
 === RUN   TestCSRSignerNameSigningPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName
---- FAIL: TestCSRSignerNameSigningPlugin (50.39s)
-    --- PASS: TestCSRSignerNameSigningPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName (9.65s)
+--- PASS: TestCSRSignerNameSigningPlugin (27.47s)
+    --- PASS: TestCSRSignerNameSigningPlugin/should_admit_when_a_user_has_permission_for_the_exact_signerName (8.82s)
     --- PASS: TestCSRSignerNameSigningPlugin/should_admit_when_a_user_has_permission_for_the_wildcard-suffixed_signerName (8.74s)
-    --- FAIL: TestCSRSignerNameSigningPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName (32.00s)
+    --- PASS: TestCSRSignerNameSigningPlugin/should_deny_if_a_user_does_not_have_permission_for_the_given_signerName (9.90s)
 === RUN   TestCertificateSubjectRestrictionPlugin
 === RUN   TestCertificateSubjectRestrictionPlugin/should_admit_a_request_if_signerName_is_NOT_kube-apiserver-client_and_org_is_system:masters
 === RUN   TestCertificateSubjectRestrictionPlugin/should_admit_a_request_if_signerName_is_kube-apiserver-client_and_group_is_NOT_system:masters
@@ -363,11 +344,11 @@
 === RUN   TestController_AutoApproval/should_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_and_matches_requirements_despite_missing_username_if_nodeclient_permissions_are_granted
 === RUN   TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_that_does_not_match_requirements
 === RUN   TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client_signerName_that_DOES_match_kubelet_CSR_requirements
---- FAIL: TestController_AutoApproval (137.36s)
-    --- FAIL: TestController_AutoApproval/should_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_and_matches_requirements (37.33s)
-    --- FAIL: TestController_AutoApproval/should_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_and_matches_requirements_despite_missing_username_if_nodeclient_permissions_are_granted (34.47s)
-    --- FAIL: TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_that_does_not_match_requirements (32.71s)
-    --- FAIL: TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client_signerName_that_DOES_match_kubelet_CSR_requirements (32.85s)
+--- PASS: TestController_AutoApproval (42.77s)
+    --- PASS: TestController_AutoApproval/should_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_and_matches_requirements (8.14s)
+    --- PASS: TestController_AutoApproval/should_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_and_matches_requirements_despite_missing_username_if_nodeclient_permissions_are_granted (7.94s)
+    --- PASS: TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client-kubelet_signerName_that_does_not_match_requirements (13.31s)
+    --- PASS: TestController_AutoApproval/should_not_auto-approve_CSR_that_has_kube-apiserver-client_signerName_that_DOES_match_kubelet_CSR_requirements (13.38s)
 === RUN   TestCSRSignerNameDefaulting
 === RUN   TestCSRSignerNameDefaulting/defaults_to_legacy-unknown_if_not_recognised
 === RUN   TestCSRSignerNameDefaulting/does_not_default_signerName_if_an_explicit_value_is_provided
@@ -394,11 +375,11 @@
 --- FAIL: TestSingleWatch (32.66s)
 === RUN   TestMultiWatch
 === RUN   TestSelfLinkOnNamespace
---- FAIL: TestSelfLinkOnNamespace (34.62s)
+--- PASS: TestSelfLinkOnNamespace (7.94s)
 === RUN   TestDynamicClient
---- FAIL: TestDynamicClient (37.34s)
+--- PASS: TestDynamicClient (8.29s)
 === RUN   TestDynamicClientWatch
---- FAIL: TestDynamicClientWatch (38.35s)
+--- PASS: TestDynamicClientWatch (8.89s)
 === RUN   TestConfigMap
 --- PASS: TestConfigMap (3.84s)
 === RUN   TestCronJobLaunchesPodAndCleansUp
@@ -444,7 +425,7 @@
 --- PASS: TestScalePausedDeployment (9.90s)
 === RUN   TestDeploymentHashCollision
 === RUN   TestPDBWithScaleSubresource
---- FAIL: TestPDBWithScaleSubresource (33.74s)
+--- PASS: TestPDBWithScaleSubresource (10.81s)
 === RUN   TestDryRun//v1,_Resource=configmaps
 === RUN   TestDryRun//v1,_Resource=endpoints
 === RUN   TestDryRun//v1,_Resource=events
@@ -785,11 +766,11 @@
 === RUN   TestTerminalPodEviction
 --- PASS: TestTerminalPodEviction (6.16s)
 === RUN   TestAggregatedAPIServer
---- FAIL: TestAggregatedAPIServer (31.92s)
+--- PASS: TestAggregatedAPIServer (14.01s)
 === RUN   TestWebhookLoopback
 --- PASS: TestWebhookLoopback (6.04s)
 === RUN   TestClusterScopedOwners
---- FAIL: TestClusterScopedOwners (32.57s)
+--- PASS: TestClusterScopedOwners (18.47s)
 === RUN   TestCascadingDeletion
 --- PASS: TestCascadingDeletion (8.70s)
 === RUN   TestCreateWithNonExistentOwner
@@ -797,7 +778,7 @@
 === RUN   TestStressingCascadingDeletion
 --- FAIL: TestStressingCascadingDeletion (32.23s)
 === RUN   TestOrphaning
---- FAIL: TestOrphaning (33.94s)
+--- PASS: TestOrphaning (11.46s)
 === RUN   TestSolidOwnerDoesNotBlockWaitingOwner
 --- PASS: TestSolidOwnerDoesNotBlockWaitingOwner (8.31s)
 === RUN   TestNonBlockingOwnerRefDoesNotBlock
@@ -814,7 +795,7 @@
 --- FAIL: TestCRDDeletionCascading (36.54s)
 === RUN   TestPerformance
 === RUN   TestWatchBasedManager
---- FAIL: TestWatchBasedManager (33.18s)
+--- PASS: TestWatchBasedManager (12.85s)
 === RUN   TestDynamicAudit
 === RUN   TestDynamicAudit/one_sink
 === RUN   TestDynamicAudit/two_sink
@@ -834,15 +815,15 @@
 === RUN   TestAudit/audit.k8s.io/v1beta1.Metadata.true
 === RUN   TestAudit/audit.k8s.io/v1beta1.Request.true
 === RUN   TestAudit/audit.k8s.io/v1beta1.RequestResponse.true
---- FAIL: TestAudit (143.17s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.false (32.65s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.Metadata.true (31.58s)
-    --- PASS: TestAudit/audit.k8s.io/v1.Request.true (9.51s)
-    --- FAIL: TestAudit/audit.k8s.io/v1.RequestResponse.true (32.39s)
-    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.false (9.38s)
-    --- PASS: TestAudit/audit.k8s.io/v1beta1.Metadata.true (9.19s)
-    --- PASS: TestAudit/audit.k8s.io/v1beta1.Request.true (9.41s)
-    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.true (9.05s)
+--- PASS: TestAudit (82.45s)
+    --- PASS: TestAudit/audit.k8s.io/v1.RequestResponse.false (10.09s)
+    --- PASS: TestAudit/audit.k8s.io/v1.Metadata.true (10.50s)
+    --- PASS: TestAudit/audit.k8s.io/v1.Request.true (9.94s)
+    --- PASS: TestAudit/audit.k8s.io/v1.RequestResponse.true (9.62s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.false (9.93s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.Metadata.true (11.09s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.Request.true (10.55s)
+    --- PASS: TestAudit/audit.k8s.io/v1beta1.RequestResponse.true (10.73s)
 === RUN   TestCRDShadowGroup
 --- PASS: TestCRDShadowGroup (10.20s)
 === RUN   TestCRD
@@ -858,7 +839,7 @@
 === RUN   TestRun
 --- PASS: TestRun (7.67s)
 === RUN   TestLivezAndReadyz
---- FAIL: TestLivezAndReadyz (31.74s)
+--- PASS: TestLivezAndReadyz (8.11s)
 === RUN   TestOpenAPIDelegationChainPlumbing
 --- PASS: TestOpenAPIDelegationChainPlumbing (7.45s)
 === RUN   TestOpenAPIApiextensionsOverlapProtection
@@ -868,9 +849,9 @@
 === RUN   TestReconcilerMasterLeaseMultiMoreMasters
 --- PASS: TestReconcilerMasterLeaseMultiMoreMasters (41.85s)
 === RUN   TestReconcilerMasterLeaseMultiCombined
---- FAIL: TestReconcilerMasterLeaseMultiCombined (31.51s)
+--- PASS: TestReconcilerMasterLeaseMultiCombined (27.97s)
 === RUN   TestSecretsShouldBeTransformed
---- FAIL: TestSecretsShouldBeTransformed (38.92s)
+--- PASS: TestSecretsShouldBeTransformed (17.35s)
 === RUN   TestMasterProcessMetrics
 --- PASS: TestMasterProcessMetrics (6.09s)
 === RUN   TestApiserverMetrics
@@ -969,8 +950,7 @@
 === RUN   TestFullyLabeledReplicas
 --- PASS: TestFullyLabeledReplicas (4.43s)
 === RUN   TestScaleSubresources
---- FAIL: TestScaleSubresources (32.56s)
-
+--- PASS: TestScaleSubresources (8.36s)
 === RUN   TestSchedulerExtender
 --- PASS: TestSchedulerExtender (6.96s)
 === RUN   TestPreFilterPlugin
@@ -1066,9 +1046,42 @@
 === RUN   TestServiceAccountTokenAuthentication
 --- PASS: TestServiceAccountTokenAuthentication (40.24s)
 === RUN   TestComponentSecureServingAndAuth
---- FAIL: TestComponentSecureServingAndAuth (32.64s)
+--- PASS: TestComponentSecureServingAndAuth (41.19s)
+    --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager (9.42s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/no-flags (0.98s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/insecurely_/healthz (0.11s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/insecurely_/metrics (0.15s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager//healthz_without_authn/authz (1.10s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager//metrics_without_authn/authz (0.99s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/authorization_skipped_for_/healthz_with_authn/authz (1.08s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/authorization_skipped_for_/healthz_with_BROKEN_authn/authz (1.33s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/not_authorized_/metrics (1.41s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/not_authorized_/metrics_with_BROKEN_authn/authz (1.22s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-controller-manager/always-allowed_/metrics_with_BROKEN_authn/authz (1.05s)
+    --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager (10.18s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/no-flags (0.74s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/insecurely_/healthz (0.11s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/insecurely_/metrics (0.13s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager//healthz_without_authn/authz (1.19s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager//metrics_without_authn/authz (1.32s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/authorization_skipped_for_/healthz_with_authn/authz (1.21s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/authorization_skipped_for_/healthz_with_BROKEN_authn/authz (1.30s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/not_authorized_/metrics (1.74s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/not_authorized_/metrics_with_BROKEN_authn/authz (1.26s)
+        --- PASS: TestComponentSecureServingAndAuth/cloud-controller-manager/always-allowed_/metrics_with_BROKEN_authn/authz (1.18s)
+    --- PASS: TestComponentSecureServingAndAuth/kube-scheduler (11.19s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/no-flags (1.29s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/insecurely_/healthz (0.11s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/insecurely_/metrics (0.14s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler//healthz_without_authn/authz (1.52s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler//metrics_without_authn/authz (1.58s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/authorization_skipped_for_/healthz_with_authn/authz (1.31s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/authorization_skipped_for_/healthz_with_BROKEN_authn/authz (1.35s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/not_authorized_/metrics (1.72s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/not_authorized_/metrics_with_BROKEN_authn/authz (0.96s)
+        --- PASS: TestComponentSecureServingAndAuth/kube-scheduler/always-allowed_/metrics_with_BROKEN_authn/authz (1.23s)
 === RUN   TestVolumeTemplateNoopUpdate
---- FAIL: TestVolumeTemplateNoopUpdate (32.28s)
+--- PASS: TestVolumeTemplateNoopUpdate (8.18s)
 === RUN   TestSpecReplicasChange
 --- PASS: TestSpecReplicasChange (6.88s)
 === RUN   TestDeletingAndFailedPods

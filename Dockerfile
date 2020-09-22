@@ -22,7 +22,7 @@ COPY docs/java.util.logging.properties /opt/${PRODUCT}/config/
 
 ENV JAVA_OPTS -Djava.util.logging.config.file=/opt/${PRODUCT}/config/java.util.logging.properties -Djava.net.preferIPv4Stack=true
 
-CMD  /opt/${PRODUCT}/bin/${PRODUCT} --server.port=2379 --ignite.config=/opt/${PRODUCT}/config/ignite-server.xml
+CMD  /opt/${PRODUCT}/bin/${PRODUCT} --server-port=2379 --ignite-config=/opt/${PRODUCT}/config/ignite-server.xml
 
 RUN mkdir ${IGNITE_HOME}/work && \
     chgrp -R 0 ${IGNITE_HOME}/work && \
