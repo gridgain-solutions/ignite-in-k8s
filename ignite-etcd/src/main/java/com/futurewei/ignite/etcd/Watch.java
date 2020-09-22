@@ -128,11 +128,11 @@ public final class Watch {
     private static final class Watcher {
         /** Limit number of simultaneous watchers to 1000 */
         private static final ExecutorService watchExec =
-            Executors.newFixedThreadPool(1_000, new NamedThreadFactory("etcd-watch"));
+            Executors.newCachedThreadPool(new NamedThreadFactory("etcd-watch"));
 
         /** Threads reporting events to the clients */
         private static final ExecutorService reportExec = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
+            8,
             new NamedThreadFactory("etcd-watch-report")
         );
 
