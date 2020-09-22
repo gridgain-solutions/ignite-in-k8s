@@ -10,9 +10,12 @@ import org.apache.ignite.cache.query.SqlFieldsQuery;
 
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.expiry.ModifiedExpiryPolicy;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +30,7 @@ import java.util.stream.Collectors;
  * keys are deleted.
  */
 public final class Lease {
-    private final IgniteCache<Long, Long> cache;
+    private final IgniteCache<Long, Ttl> cache;
     private final IgniteLogger log;
     private final IgniteCache<Key, Value> kvCache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
@@ -53,18 +56,17 @@ public final class Lease {
         if (id == 0)
             id = Math.abs(Random.instance.nextLong());
 
-        Rpc.LeaseGrantResponse.Builder res = Rpc.LeaseGrantResponse.newBuilder()
+        long etl = Instant.now().getEpochSecond() + ttl;
+
+        ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl));
+
+        cache.withExpiryPolicy(expPlc).put(id, new Ttl(ttl, etl));
+
+        return Rpc.LeaseGrantResponse.newBuilder()
             .setHeader(EtcdCluster.getHeader(ctx.revision()))
             .setID(id)
-            .setTTL(ttl);
-
-        try {
-            cache.put(id, ttl);
-        } catch (Exception ex) {
-            res.setError(ex.getMessage());
-        }
-
-        return res.build();
+            .setTTL(ttl)
+            .build();
     }
 
     /** Revokes a lease. All keys attached to the lease will expire and be deleted. */
@@ -100,18 +102,21 @@ public final class Lease {
         Rpc.LeaseKeepAliveResponse.Builder res = Rpc.LeaseKeepAliveResponse.newBuilder()
             .setHeader(EtcdCluster.getHeader(ctx.revision()));
 
-        Long ttl = cache.get(id);
+        Ttl ttl = cache.get(id);
 
         if (ttl == null)
             throw new IllegalArgumentException("Lease does not exist: " + String.format("%16x", id));
 
-        resetTtl(kvCache, id, ttl);
-        resetTtl(histCache, id, ttl);
+        resetTtl(kvCache, id, ttl.ttl());
+        resetTtl(histCache, id, ttl.ttl());
+
+        ExpiryPolicy expPlc = new ModifiedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl.ttl()));
+        cache.withExpiryPolicy(expPlc).put(id, ttl.keepAlive());
 
         if (log.isTraceEnabled())
             log.trace("Kept lease " + String.format("%16x", id) + " alive");
 
-        resConsumer.accept(res.setID(id).setTTL(ttl).build());
+        resConsumer.accept(res.setID(id).setTTL(ttl.ttl()).build());
     }
 
     /** Retrieves lease information. */
@@ -122,12 +127,10 @@ public final class Lease {
         Rpc.LeaseTimeToLiveResponse.Builder res = Rpc.LeaseTimeToLiveResponse.newBuilder()
             .setHeader(EtcdCluster.getHeader(ctx.revision()));
 
-        Long grantedTtl = cache.get(id);
+        Ttl ttl = cache.get(id);
 
-        if (grantedTtl != null) {
-            long ttl = grantedTtl; // TODO: KV lease management
-
-            res.setID(id).setTTL(ttl).setGrantedTTL(grantedTtl);
+        if (ttl != null) {
+            res.setID(id).setTTL(ttl.remainingTtl()).setGrantedTTL(ttl.ttl());
 
             if (listKeys) {
                 SqlFieldsQuery q = new SqlFieldsQuery("SELECT KEY FROM ETCD_KV WHERE LEASE = ?").setArgs(id);

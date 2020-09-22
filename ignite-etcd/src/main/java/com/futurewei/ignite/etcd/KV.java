@@ -39,7 +39,7 @@ public final class KV {
     private final IgniteLogger log;
     private final IgniteCache<Key, Value> cache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
-    private final IgniteCache<Long, Long> leaseCache;
+    private final IgniteCache<Long, Ttl> leaseCache;
     private final EtcdCluster ctx;
 
     public KV(Ignite ignite, String cacheName, String histCacheName, String leaseCacheName) {
@@ -627,12 +627,12 @@ public final class KV {
                 leasedCache = cache;
                 leasedHistCache = histCache;
             } else {
-                Long ttl = leaseCache.get(lease);
+                Ttl ttl = leaseCache.get(lease);
 
                 if (ttl == null)
                     throw new IllegalArgumentException("Lease does not exist: " + String.format("%16x", lease));
 
-                ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl));
+                ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl.remainingTtl()));
 
                 leasedCache = cache.withExpiryPolicy(expPlc);
                 leasedHistCache = histCache.withExpiryPolicy(expPlc);
