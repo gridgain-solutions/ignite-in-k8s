@@ -39,7 +39,7 @@ public final class KV {
     private final IgniteLogger log;
     private final IgniteCache<Key, Value> cache;
     private final IgniteCache<HistoricalKey, HistoricalValue> histCache;
-    private final IgniteCache<Long, Long> leaseCache;
+    private final IgniteCache<Long, Ttl> leaseCache;
     private final EtcdCluster ctx;
 
     public KV(Ignite ignite, String cacheName, String histCacheName, String leaseCacheName) {
@@ -125,7 +125,6 @@ public final class KV {
         // write value for key (cannot have update value in transaction after EntryProcessor is applied)").
         // Thus, use IgniteCache#invoke(k) only if there is not Cache#put(k) in the same transaction. Otherwise use
         // IgniteCompute#affiniyCall(k).
-        // TODO: why does IgniteCache#invoke(k) fail for read-only closures?
         if (txModifiesKey) {
             String cacheName = cache.getName();
 
@@ -382,6 +381,19 @@ public final class KV {
             sql.append("\nWHERE ").append(sqlFilter);
 
         if (rev > 0) {
+            // Get latest from a historical table.
+            // Normally, for a historical (versioned) table HIST like
+            //     ID VAL VER
+            //     a  a1  1
+            //     b  b1  2
+            //     a  a2  3
+            //     b  b2  4
+            // this SQL gives the latest {ID, VAL} records:
+            //     SELECT ID, VAL FROM HIST AS O
+            //       WHERE O.VER <= ? AND O.VER = (SELECT MAX(VER) FROM HIST AS I WHERE I.VER <= ? AND I.ID = O.ID)
+            // That SQL does not work for H2-based Ignite SQL since the inner query is executed locally and there are
+            // no Ignite Query properties to change that. The only way to make this SQL work in H2-based Ignite is
+            // replicating the cache. This will be fixed in Calcite-based Ignite.
             sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION = ?");
             sqlArgs.add(rev);
         }
@@ -484,8 +496,8 @@ public final class KV {
 
         // the upper bound on the requested range [key, range_end).
         // If range_end is '\0', the range is all keys >= key.
-        // TODO: If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
-        // then the range request gets all keys prefixed with key.
+        // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"), then the range request gets all
+        // keys prefixed with key.
         // If both key and range_end are '\0', then the range request returns all keys.
         ByteString rangeEnd = req.getRangeEnd();
 
@@ -627,12 +639,12 @@ public final class KV {
                 leasedCache = cache;
                 leasedHistCache = histCache;
             } else {
-                Long ttl = leaseCache.get(lease);
+                Ttl ttl = leaseCache.get(lease);
 
                 if (ttl == null)
                     throw new IllegalArgumentException("Lease does not exist: " + String.format("%16x", lease));
 
-                ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl));
+                ExpiryPolicy expPlc = new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, ttl.remainingTtl()));
 
                 leasedCache = cache.withExpiryPolicy(expPlc);
                 leasedHistCache = histCache.withExpiryPolicy(expPlc);
@@ -655,8 +667,8 @@ public final class KV {
 
         // range_end is the key following the last key to delete for the range [key, range_end).
         // If range_end is not given, the range is defined to contain only the key argument.
-        // TODO: If range_end is one bit larger than the given key, then the range is all the keys
-        // with the prefix (the given key).
+        // If range_end is one bit larger than the given key, then the range is all the keys with the prefix
+        // (the given key).
         // If range_end is '\0', the range is all keys greater than or equal to the key argument.
         ByteString rangeEnd = req.getRangeEnd();
 

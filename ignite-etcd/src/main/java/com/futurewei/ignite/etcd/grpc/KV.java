@@ -16,26 +16,42 @@ public final class KV extends KVGrpc.KVImplBase {
 
     @Override
     public void range(Rpc.RangeRequest req, StreamObserver<Rpc.RangeResponse> res) {
-        res.onNext(impl.range(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.range(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
     public void put(Rpc.PutRequest req, StreamObserver<Rpc.PutResponse> res) {
-        res.onNext(impl.put(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.put(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
     public void deleteRange(Rpc.DeleteRangeRequest req, StreamObserver<Rpc.DeleteRangeResponse> res) {
-        res.onNext(impl.deleteRange(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.deleteRange(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
     public void txn(Rpc.TxnRequest req, StreamObserver<Rpc.TxnResponse> res) {
-        res.onNext(impl.txn(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.txn(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override

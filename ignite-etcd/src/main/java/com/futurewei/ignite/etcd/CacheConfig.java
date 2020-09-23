@@ -9,7 +9,6 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 public final class CacheConfig {
     private CacheConfig() {
@@ -40,7 +39,9 @@ public final class CacheConfig {
      * Users may define a Lease cache in the external configuration and specify the cache name as a parameter for
      * ignite-etcd. The user-defined cache must conform to this specification.
      */
-    public static String LeaseSpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL;
+    public static String LeaseSpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL +
+        "\nSQL: TABLE LEASE (LEASE BIGINT, TTL BIGINT, ETL BIGINT" +
+        "\nPRIMARY KEY(LEASE)";
 
     /**
      * Default KV cache configuration is used if the user did not specify external configuration according
@@ -93,18 +94,18 @@ public final class CacheConfig {
      * Default Lease cache configuration is used if the user did not specify external configuration according
      * to {@link #LeaseSpec}.
      */
-    static CacheConfiguration<Long, Long> Lease(String cacheName) {
-        return new CacheConfiguration<Long, Long>(cacheName)
+    static CacheConfiguration<Long, Ttl> Lease(String cacheName) {
+        return new CacheConfiguration<Long, Ttl>(cacheName)
             .setCacheMode(CacheMode.REPLICATED)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
             .setSqlSchema("PUBLIC")
             .setQueryEntities(Collections.singleton(
-                new QueryEntity(Long.class, Long.class)
+                new QueryEntity(Long.class, Ttl.class)
                     .setTableName("ETCD_LEASE")
                     .addQueryField("lease", Long.class.getName(), null)
                     .addQueryField("ttl", Long.class.getName(), null)
+                    .addQueryField("etl", Long.class.getName(), null)
                     .setKeyFieldName("lease")
-                    .setValueFieldName("ttl")
             ));
     }
 }

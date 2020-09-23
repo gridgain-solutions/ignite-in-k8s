@@ -2,6 +2,8 @@ package com.futurewei.ignite.etcd.grpc;
 
 import etcdserverpb.LeaseGrpc;
 import etcdserverpb.Rpc;
+import io.grpc.Status;
+import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import org.apache.ignite.Ignite;
 
@@ -14,14 +16,22 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseGrant(Rpc.LeaseGrantRequest req, StreamObserver<Rpc.LeaseGrantResponse> res) {
-        res.onNext(impl.leaseGrant(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.leaseGrant(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
     public void leaseRevoke(Rpc.LeaseRevokeRequest req, StreamObserver<Rpc.LeaseRevokeResponse> res) {
-        res.onNext(impl.leaseRevoke(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.leaseRevoke(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
@@ -46,13 +56,21 @@ public final class Lease extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseTimeToLive(Rpc.LeaseTimeToLiveRequest req, StreamObserver<Rpc.LeaseTimeToLiveResponse> res) {
-        res.onNext(impl.leaseTimeToLive(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.leaseTimeToLive(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 
     @Override
     public void leaseLeases(Rpc.LeaseLeasesRequest req, StreamObserver<Rpc.LeaseLeasesResponse> res) {
-        res.onNext(impl.leaseLeases(req));
-        res.onCompleted();
+        try {
+            res.onNext(impl.leaseLeases(req));
+            res.onCompleted();
+        } catch (Throwable t) {
+            res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
+        }
     }
 }

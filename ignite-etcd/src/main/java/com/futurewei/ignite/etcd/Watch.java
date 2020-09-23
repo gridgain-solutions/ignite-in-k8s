@@ -182,8 +182,8 @@ public final class Watch {
             // range_end is the end of the range [key, range_end) to watch. If range_end is not given,
             // only the key argument is watched. If range_end is equal to '\0', all keys greater than
             // or equal to the key argument are watched.
-            // TODO: If the range_end is one bit larger than the given key,
-            // then all keys with the prefix (the given key) will be watched.
+            // If the range_end is one bit larger than the given key, then all keys with the prefix (the given key)
+            // will be watched.
             ByteString rangeEnd = req.getRangeEnd();
 
             // start_revision is an optional revision to watch from (inclusive). No start_revision is "now".
