@@ -13,6 +13,7 @@ public class HistoricalKey extends Key {
     private static final long serialVersionUID = 1L;
 
     private long modRev;
+    private int hashCode = 0;
 
     HistoricalKey(Key key, long modRev) {
         super(key.key());
@@ -42,7 +43,7 @@ public class HistoricalKey extends Key {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), modRev);
+        return hashCode == 0 ? hashCode = Objects.hash(super.hashCode(), modRev) : hashCode;
     }
 
     /**

@@ -19,6 +19,8 @@ public final class KV extends KVGrpc.KVImplBase {
         try {
             res.onNext(impl.range(req));
             res.onCompleted();
+        } catch (IndexOutOfBoundsException ex) {
+            res.onError(new StatusException(Status.OUT_OF_RANGE.withDescription(ex.getMessage())));
         } catch (Throwable t) {
             res.onError(new StatusException(Status.UNKNOWN.withDescription(t.getCause().getMessage())));
         }
