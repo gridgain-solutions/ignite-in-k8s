@@ -12,6 +12,7 @@ public class Key implements Binarylizable, Serializable {
     private static final long serialVersionUID = 1L;
 
     private byte[] key;
+    private int hashCode = 0;
 
     Key(byte[] key) {
         this.key = key;
@@ -27,7 +28,7 @@ public class Key implements Binarylizable, Serializable {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(key);
+        return hashCode == 0 ? hashCode = Arrays.hashCode(key) : hashCode;
     }
 
     /**

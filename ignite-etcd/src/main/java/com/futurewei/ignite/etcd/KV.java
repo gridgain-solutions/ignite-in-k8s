@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -51,18 +52,36 @@ public final class KV {
         ctx = new EtcdCluster(ignite);
     }
 
+    /**
+     * Gets the keys in the range from the key-value store.
+     *
+     * @throws IndexOutOfBoundsException if the specified revision does not exist.
+     */
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
         return rangeNonTx(req, false);
     }
 
+    /**
+     * Puts the given key into the key-value store. A put request increments the revision of the key-value store
+     * and generates one event in the event history.
+     */
     public Rpc.PutResponse put(Rpc.PutRequest req) {
         return transaction(3000, 1, () -> putNonTx(req));
     }
 
+    /**
+     * Deletes the given range from the key-value store. A delete request increments the revision of the key-value
+     * store and generates a delete event in the event history for every deleted key.
+     */
     public Rpc.DeleteRangeResponse deleteRange(Rpc.DeleteRangeRequest req) {
         return transaction(10000, 0, () -> deleteRangeNonTx(req));
     }
 
+    /**
+     * Processes multiple requests in a single transaction. A txn request increments the revision of the key-value store
+     * and generates events with the same revision for every completed request. It is not allowed to modify the same
+     * key several times within one txn.
+     */
     public Rpc.TxnResponse txn(Rpc.TxnRequest req) {
         return transaction(60000, 0, () -> txnNonTx(req));
     }
@@ -391,10 +410,16 @@ public final class KV {
             // this SQL gives the latest {ID, VAL} records:
             //     SELECT ID, VAL FROM HIST AS O
             //       WHERE O.VER <= ? AND O.VER = (SELECT MAX(VER) FROM HIST AS I WHERE I.VER <= ? AND I.ID = O.ID)
+            // NB! "WHERE Subquery" limitation:
             // That SQL does not work for H2-based Ignite SQL since the inner query is executed locally and there are
             // no Ignite Query properties to change that. The only way to make this SQL work in H2-based Ignite is
-            // replicating the cache. This will be fixed in Calcite-based Ignite.
-            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION = ?");
+            // replicating the cache.
+            // This is a known "WHERE Subquery" limitation: https://www.gridgain.com/docs/latest/developers-guide/SQL/sql-api#subqueries-in-where-clause
+            // To work around this limitation we retrieve full history up to the requested revision and filter the
+            // latest entries locally on this node. This approach has a scalability (memory/performance) issue: we
+            // may need to develop a more scalable solution if this issue prevents meeting the requirements.
+            // TODO: the "WHERE Subquery" limitation will be fixed in Calcite-based Ignite, remove the workaround.
+            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION <= ?");
             sqlArgs.add(rev);
         }
 
@@ -404,24 +429,54 @@ public final class KV {
             sql.append("\nORDER BY KEY").append(sqlSort);
 
         if (limit > 0) {
-            sql.append("\nLIMIT ?");
-            sqlArgs.add(limit);
+            // Cannot LIMIT historical queries since we retrieve full history due to the "WHERE Subquery" limitation
+            // explained above.
+            // TODO: the "WHERE Subquery" limitation will be fixed in Calcite-based Ignite, remove the workaround.
+            if (rev <= 0) {
+                sql.append("\nLIMIT ?");
+                sqlArgs.add(limit);
+            }
         }
+
+        // Working around the "WHERE Subquery" limitation: store the latest (max) modification revision of each Key
+        // in a Map. Build the latest revisions map when iterating over results. Keep only the latest entries in the
+        // final result.
+        // TODO: the "WHERE Subquery" limitation will be fixed in Calcite-based Ignite, remove the workaround.
+        final Map<Key, Long> latestRevs = new HashMap<>();
 
         for (List<?> row : cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray()))) {
             Iterator<?> it = row.iterator();
 
-            long crtRev = (Long) it.next();
-            long modRev = (Long) it.next();
-            long ver = (Long) it.next();
-            long lease = (Long) it.next();
-            byte[] k = (byte[]) it.next();
-            byte[] v = noPayload ? null : (byte[]) it.next();
+            Long crtRev = (Long) it.next();
+            Long modRev = (Long) it.next();
+            Long ver = (Long) it.next();
+            Long lease = (Long) it.next();
 
-            // TODO: remove deleted entries from historical query
+            Key k = new Key((byte[]) it.next());
 
-            res.add(new SimpleImmutableEntry<>(new Key(k), new Value(v, crtRev, modRev, ver, lease)));
+            // "WHERE Subquery" limitation workaround: build and filter the latest versions
+            if (rev > 0) {
+                Long latestRev = latestRevs.get(k);
+                if (latestRev != null && latestRev >= modRev)
+                    continue; // skip: a newer entry was already added to result
+                else {
+                    latestRevs.put(k, modRev);
+                }
+            }
+
+            if (crtRev > 0) { // do not add tombstone (deleted entry marker)
+                Value v = new Value((noPayload ? null : (byte[]) it.next()), crtRev, modRev, ver, lease);
+                res.add(new SimpleImmutableEntry<>(k, v));
+            }
         }
+
+        // "WHERE Subquery" limitation workaround: filter
+        if (rev > 0)
+            res.removeIf(e -> e.getValue().modifyRevision() < latestRevs.get(e.getKey()));
+
+        // "WHERE Subquery" limitation workaround: limit
+        if (rev > 0 && limit > 0)
+            res = res.stream().limit(limit).collect(Collectors.toList());
 
         return res;
     }
@@ -536,6 +591,13 @@ public final class KV {
         // the upper bound for returned key create revisions; all keys with greater create revisions
         // will be filtered away.
         long maxCrtRev = req.getMaxCreateRevision();
+
+        long curRev = ctx.revision();
+
+        if (rev > curRev)
+            throw new IndexOutOfBoundsException("Required revision is a future revision");
+        else if (rev == curRev)
+            rev = 0;
 
         if (log.isTraceEnabled()) {
             StringBuilder s = new StringBuilder("RangeRequest {")
@@ -675,7 +737,6 @@ public final class KV {
         // If prev_kv is set, etcd gets the previous key-value pairs before deleting it.
         // The previous key-value pairs will be returned in the delete response.
         boolean prevKv = req.getPrevKv();
-
 
         long rev = ctx.incrementRevision();
         long cnt = 0;
