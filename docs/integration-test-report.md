@@ -17,18 +17,12 @@
 | `client/TestSingleWatch` | [Watch took longer than TIMEOUT](https://github.com/gridgain-solutions/ignite-in-k8s/issues/41)
 | `daemonset/TestSimpleDaemonSetLaunchesPods` | [Apiserver received an error that is not an metav1.Status](https://github.com/gridgain-solutions/ignite-in-k8s/issues/43)
 | `etcd/TestCrossGroupStorage` | [Timed out waiting for watch event for v1 in response to persisting v1](https://github.com/gridgain-solutions/ignite-in-k8s/issues/44)
-| `garbagecollector/TestStressingCascadingDeletion` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
 | `garbagecollector/TestCustomResourceCascadingDeletion` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
 | `garbagecollector/TestMixedRelationships` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
 | `garbagecollector/TestCRDDeletionCascading` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
-| `quota/TestQuota` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
 | `scheduler/TestPreemptionRaces` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
 | `scheduler/TestNominatedNodeCleanUp` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
-| `serviceaccount/TestServiceAccountTokenAutoMount` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
-| `ttlcontroller/TestTTLAnnotations` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
 | `volume/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
-| `volumescheduling/TestVolumeBinding` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
-| `volumescheduling/TestVolumeBindingStressWithSchedulerResync` | [Timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/46)
 | `volumescheduling/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
 
 ## Report
@@ -776,7 +770,7 @@
 === RUN   TestCreateWithNonExistentOwner
 --- PASS: TestCreateWithNonExistentOwner (8.72s)
 === RUN   TestStressingCascadingDeletion
---- FAIL: TestStressingCascadingDeletion (32.23s)
+--- PASS: TestStressingCascadingDeletion (12.37s)
 === RUN   TestOrphaning
 --- PASS: TestOrphaning (11.46s)
 === RUN   TestSolidOwnerDoesNotBlockWaitingOwner
@@ -882,7 +876,7 @@
 === RUN   TestPodUpdateEphemeralContainers
 --- PASS: TestPodUpdateEphemeralContainers (11.11s)
 === RUN   TestQuota
---- FAIL: TestQuota (186.08s)
+--- PASS: TestQuota (7.39s)
 === RUN   TestQuotaLimitedResourceDenial
 --- PASS: TestQuotaLimitedResourceDenial (4.35s)
 === RUN   TestAdoption
@@ -1042,7 +1036,7 @@
 === RUN   TestServiceAccountTokenAutoCreate
 --- PASS: TestServiceAccountTokenAutoCreate (13.16s)
 === RUN   TestServiceAccountTokenAutoMount
---- FAIL: TestServiceAccountTokenAutoMount (14.73s)
+--- PASS: TestServiceAccountTokenAutoMount (7.71s)
 === RUN   TestServiceAccountTokenAuthentication
 --- PASS: TestServiceAccountTokenAuthentication (40.24s)
 === RUN   TestComponentSecureServingAndAuth
@@ -1091,7 +1085,7 @@
 === RUN   TestAPICiphers
 --- PASS: TestAPICiphers (8.96s)
 === RUN   TestTTLAnnotations
---- FAIL: TestTTLAnnotations (35.56s)
+--- PASS: TestTTLAnnotations (10.43s)
 === RUN   TestPodDeletionWithDswp
 --- PASS: TestPodDeletionWithDswp (6.78s)
 === RUN   TestPodUpdateWithWithADC
@@ -1117,11 +1111,19 @@
 === RUN   TestPersistentVolumeMultiPVsPVCs
 panic: test timed out after 10m0s
 === RUN   TestVolumeBinding
---- FAIL: TestVolumeBinding (43.39s)
+--- PASS: TestVolumeBinding (26.17s)
 === RUN   TestVolumeBindingRescheduling
---- PASS: TestVolumeBindingRescheduling (17.42s)
+--- PASS: TestVolumeBindingRescheduling (12.80s)
 === RUN   TestVolumeBindingStress
---- FAIL: TestVolumeBindingStress (488.10s)
+--- PASS: TestVolumeBindingStress (28.73s)
 === RUN   TestVolumeBindingStressWithSchedulerResync
-panic: test timed out after 10m0s
+--- PASS: TestVolumeBindingStressWithSchedulerResync (19.65s)
+=== RUN   TestVolumeBindingDynamicStressFast
+--- PASS: TestVolumeBindingDynamicStressFast (14.30s)
+=== RUN   TestVolumeBindingDynamicStressSlow
+--- PASS: TestVolumeBindingDynamicStressSlow (24.98s)
+=== RUN   TestVolumeBindingWithAntiAffinity
+--- PASS: TestVolumeBindingWithAntiAffinity (12.91s)
+=== RUN   TestVolumeBindingWithAffinity
+--- PASS: TestVolumeBindingWithAffinity (11.94s)
 ```
