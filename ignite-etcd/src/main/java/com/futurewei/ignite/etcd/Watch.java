@@ -3,21 +3,23 @@ package com.futurewei.ignite.etcd;
 import com.google.protobuf.ByteString;
 import etcdserverpb.Rpc;
 import io.grpc.StatusRuntimeException;
-import mvccpb.Kv;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cache.query.ContinuousQuery;
 import org.apache.ignite.cache.query.QueryCursor;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
 
 import javax.cache.Cache;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.EventType;
-import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +51,10 @@ public final class Watch {
     }
 
     /**
-     * Starts asynchronously watching for key events.
+     * Starts asynchronously watching for events happening or that have happened. Both input and output are streams;
+     * the input stream is for creating and canceling watchers and the output stream sends events. One watch RPC can
+     * watch on multiple key ranges, streaming events for several watches at once. The entire event history can be
+     * watched starting from the last compaction revision.
      *
      * @param req         Watch parameters
      * @param resConsumer Accepts the event notifications
@@ -199,21 +204,7 @@ public final class Watch {
 
             ContinuousQuery<Key, Value> q = new ContinuousQuery<>();
 
-            q.setLocalListener(evts -> {
-                synchronized (reportFuts) {
-                    if (done.getCount() > 0) {
-                        CompletableFuture<?> fut = CompletableFuture.runAsync(() -> report(evts), reportExec);
-                        reportFuts.add(fut);
-
-                        fut.thenRun(() -> {
-                            synchronized (reportFuts) {
-                                if (done.getCount() > 0)
-                                    reportFuts.remove(fut);
-                            }
-                        });
-                    }
-                }
-            });
+            q.setLocalListener(this::reportAsync);
 
             q.setRemoteFilterFactory((Factory<CacheEntryEventFilter<Key, Value>>) () ->
                 (CacheEntryEventFilter<Key, Value>) e -> {
@@ -265,6 +256,11 @@ public final class Watch {
                     log.trace(watcherInfo.get() + " started");
 
                 try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
+                    // Report history after the query started. This may lead to duplicates and out-of-order
+                    // reporting but we will not loose data. We do not use Continuous Query's initial query since
+                    // initial query does not provide "exactly once" guarantee anyway and will likely be deprecated.
+                    reportHistory(startRev, start, end, noPut, noDel);
+
                     done.await();
                 } catch (InterruptedException e) {
                     log.error(watcherInfo.get() + " completed ungracefully", e);
@@ -272,6 +268,140 @@ public final class Watch {
 
                 if (log.isTraceEnabled())
                     log.trace(watcherInfo.get() + " completed");
+            }
+        }
+
+        private void reportHistory(long startRev, Key start, Key end, boolean noPut, boolean noDel) {
+            if (startRev <= 0)
+                return;
+
+            Collection<String> filterList = new ArrayList<>();
+            Collection<Object> qArgs = new ArrayList<>();
+
+            filterList.add("MODIFY_REVISION >= ?");
+            qArgs.add(startRev);
+
+            if (!start.isZero()) {
+                filterList.add("KEY " + (end == null ? "=" : ">=") + " ?");
+                qArgs.add(start.key());
+            }
+
+            if (end != null && !end.isZero()) {
+                filterList.add("KEY < ?");
+                qArgs.add(end.key());
+            }
+
+            SqlFieldsQuery q = new SqlFieldsQuery(
+                "SELECT _KEY, _VAL FROM ETCD_KV_HISTORY WHERE " +
+                    String.join(" AND ", filterList) + " ORDER BY KEY, MODIFY_REVISION"
+            ).setArgs(qArgs.toArray());
+
+            Map<Key, HistoricalValue> prevKvs = new HashMap<>(); // index by Key to store only previous values
+            Collection<CacheEntryEvent<HistoricalKey, HistoricalValue>> evts = new ArrayList<>();
+
+            for (List<?> row : cache.query(q)) {
+                Iterator<?> it = row.iterator();
+                final HistoricalKey k = (HistoricalKey) it.next();
+                final HistoricalValue v = (HistoricalValue) it.next();
+                final EventType type = v.isTombstone() ? EventType.REMOVED : EventType.UPDATED;
+                Key prevKey = new Key(k.key()); // re-create to avoid HistoricalKey's hashCode() when using in a Map
+
+                if ((type == EventType.UPDATED && !noPut) || (type == EventType.REMOVED && !noDel)) {
+                    HistoricalValue pv = prevKvs.get(prevKey);
+                    final HistoricalValue prevVal = pv == null || pv.isTombstone() ? null : pv;
+
+                    evts.add(new CacheEntryEvent<HistoricalKey, HistoricalValue>(cache, type) {
+                        @Override
+                        public HistoricalValue getOldValue() {
+                            return prevVal;
+                        }
+
+                        @Override
+                        public boolean isOldValueAvailable() {
+                            return prevVal != null;
+                        }
+
+                        @Override
+                        public HistoricalKey getKey() {
+                            return k;
+                        }
+
+                        @Override
+                        public HistoricalValue getValue() {
+                            return v;
+                        }
+
+                        @Override
+                        public <T> T unwrap(Class<T> clazz) {
+                            return null;
+                        }
+                    });
+                }
+
+                prevKvs.put(prevKey, v);
+            }
+
+            if (evts.size() > 0)
+                reportAsync(evts);
+        }
+
+        private void reportAsync(Collection<CacheEntryEvent<HistoricalKey, HistoricalValue>> evts) {
+            synchronized (reportFuts) {
+                if (done.getCount() > 0) {
+                    CompletableFuture<?> fut = CompletableFuture.runAsync(() -> report(evts), reportExec);
+                    reportFuts.add(fut);
+
+                    fut.thenRun(() -> {
+                        synchronized (reportFuts) {
+                            if (done.getCount() > 0)
+                                reportFuts.remove(fut);
+                        }
+                    });
+                }
+            }
+        }
+
+        private void reportAsync(Iterable<CacheEntryEvent<? extends Key, ? extends Value>> evts) {
+            synchronized (reportFuts) {
+                if (done.getCount() > 0) {
+                    CompletableFuture<?> fut = CompletableFuture.runAsync(() -> report(evts), reportExec);
+                    reportFuts.add(fut);
+
+                    fut.thenRun(() -> {
+                        synchronized (reportFuts) {
+                            if (done.getCount() > 0)
+                                reportFuts.remove(fut);
+                        }
+                    });
+                }
+            }
+        }
+
+        private void report(Collection<CacheEntryEvent<HistoricalKey, HistoricalValue>> evts) {
+            // If prev_kv is set, created watcher gets the previous KV before the event happens.
+            // If the previous KV is already compacted, nothing will be returned.
+            boolean prevKv = req.getPrevKv();
+
+            Rpc.WatchResponse.Builder res = Rpc.WatchResponse.newBuilder()
+                .setHeader(EtcdCluster.getHeader(ctx.revision()))
+                .setWatchId(req.getWatchId());
+
+            for (CacheEntryEvent<? extends Key, ? extends HistoricalValue> evt : evts)
+                res.addEvents(PBFormat.event(evt, false, prevKv));
+
+            if (done.getCount() > 0) {
+                Rpc.WatchResponse r = res.build();
+
+                if (log.isTraceEnabled())
+                    trace(r);
+
+                try {
+                    resConsumer.accept(r);
+                } catch (StatusRuntimeException | IllegalStateException ignored) {
+                    // Client closed connection: ignore
+                } catch (Exception e) {
+                    log.error("Failed to notify watcher", e);
+                }
             }
         }
 
@@ -284,35 +414,35 @@ public final class Watch {
                 .setHeader(EtcdCluster.getHeader(ctx.revision()))
                 .setWatchId(req.getWatchId());
 
-            for (CacheEntryEvent<? extends Key, ? extends Value> evt : evts) {
-                EventType t = evt.getEventType();
-                Kv.Event.EventType kvt = t == EventType.REMOVED || t == EventType.EXPIRED
-                    ? Kv.Event.EventType.DELETE
-                    : Kv.Event.EventType.PUT;
-
-                Kv.Event.Builder kve = Kv.Event.newBuilder()
-                    .setType(kvt)
-                    .setKv(PBFormat.kv(new AbstractMap.SimpleImmutableEntry<>(evt.getKey(), evt.getValue())));
-
-                if (prevKv) {
-                    Value oldVal = evt.getOldValue();
-
-                    if (oldVal != null)
-                        kve.setPrevKv(PBFormat.kv(new AbstractMap.SimpleImmutableEntry<>(evt.getKey(), oldVal)));
-                }
-
-                res.addEvents(kve.build());
-            }
+            for (CacheEntryEvent<? extends Key, ? extends HistoricalValue> evt : evts)
+                res.addEvents(PBFormat.event(evt, false, prevKv));
 
             if (done.getCount() > 0) {
+                Rpc.WatchResponse r = res.build();
+
+                if (log.isTraceEnabled())
+                    trace(r);
+
                 try {
-                    resConsumer.accept(res.build());
+                    resConsumer.accept(r);
                 } catch (StatusRuntimeException | IllegalStateException ignored) {
                     // Client closed connection: ignore
                 } catch (Exception e) {
                     log.error("Failed to notify watcher", e);
                 }
             }
+        }
+
+        private void trace(Rpc.WatchResponse res) {
+            log.trace(
+                "WatchResponse {watchId: "+ res.getWatchId() + ", events: [" +
+                    String.join(
+                        ", ",
+                        res.getEventsList().stream()
+                            .map(evt -> evt.getKv().getKey().toStringUtf8())
+                            .toArray(String[]::new)
+                    ) + "]}"
+            );
         }
 
         private void await(CompletableFuture<?> fut, long timeout) {
