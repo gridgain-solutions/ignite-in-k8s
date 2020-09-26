@@ -667,7 +667,7 @@ public final class KV {
             log.trace(
                 "PutRequest {key: " + reqKey.toStringUtf8() +
                     ", value: " + reqVal.toStringUtf8() +
-                    ", lease: " + lease + " / " + String.format("%16x", lease) +
+                    (lease > 0 ? ", lease: " + lease + " / " + String.format("%16x", lease) : "") +
                     "}"
             );
 

@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class Watch {
@@ -180,6 +179,24 @@ public final class Watch {
             await(watchFut, 180_000);
         }
 
+        @Override
+        public String toString() {
+            StringBuilder s = new StringBuilder("Watcher {")
+                .append("key: ").append(req.getKey().toStringUtf8());
+            if (req.getRangeEnd() != null && !req.getRangeEnd().isEmpty())
+                s.append(", rangeEnd: ").append(req.getRangeEnd().toStringUtf8());
+            if (req.getStartRevision() > 0)
+                s.append(", startRev: ").append(req.getStartRevision());
+            if (!req.getFiltersList().isEmpty())
+                s.append(", filters: [").append(
+                    req.getFiltersList().stream()
+                        .map(Rpc.WatchCreateRequest.FilterType::toString)
+                        .collect(Collectors.joining(", "))
+                ).append("]");
+            s.append("}");
+            return s.toString();
+        }
+
         private void run() {
             // key is the key to register for watching
             ByteString key = req.getKey();
@@ -235,25 +252,8 @@ public final class Watch {
             );
 
             if (done.getCount() > 0) {
-                Supplier<String> watcherInfo = () -> {
-                    StringBuilder s = new StringBuilder("Watcher {")
-                        .append("key: ").append(key.toStringUtf8());
-                    if (end != null)
-                        s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
-                    if (startRev > 0)
-                        s.append(", startRev: ").append(startRev);
-                    if (!filters.isEmpty())
-                        s.append(", filters: [").append(
-                            filters.stream()
-                                .map(Rpc.WatchCreateRequest.FilterType::toString)
-                                .collect(Collectors.joining(", "))
-                        ).append("]");
-                    s.append("}");
-                    return s.toString();
-                };
-
                 if (log.isTraceEnabled())
-                    log.trace(watcherInfo.get() + " started");
+                    log.trace(this.toString() + " started");
 
                 try (QueryCursor<Cache.Entry<Key, Value>> ignored = cache.query(q)) {
                     // Report history after the query started. This may lead to duplicates and out-of-order
@@ -263,11 +263,11 @@ public final class Watch {
 
                     done.await();
                 } catch (InterruptedException e) {
-                    log.error(watcherInfo.get() + " completed ungracefully", e);
+                    log.error(this.toString() + " completed ungracefully", e);
                 }
 
                 if (log.isTraceEnabled())
-                    log.trace(watcherInfo.get() + " completed");
+                    log.trace(this.toString() + " completed");
             }
         }
 
