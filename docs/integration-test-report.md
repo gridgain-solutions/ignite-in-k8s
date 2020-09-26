@@ -22,8 +22,6 @@
 | `garbagecollector/TestCRDDeletionCascading` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
 | `scheduler/TestPreemptionRaces` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
 | `scheduler/TestNominatedNodeCleanUp` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
-| `volume/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
-| `volumescheduling/TestPersistentVolumeMultiPVsPVCs` | [Test timed out after 10 minutes](https://github.com/gridgain-solutions/ignite-in-k8s/issues/48)
 
 ## Report
 ```
@@ -1109,7 +1107,7 @@
 === RUN   TestPersistentVolumeMultiPVs
 --- PASS: TestPersistentVolumeMultiPVs (7.47s)
 === RUN   TestPersistentVolumeMultiPVsPVCs
-panic: test timed out after 10m0s
+--- PASS: TestPersistentVolumeMultiPVsPVCs (16.63s)
 === RUN   TestVolumeBinding
 --- PASS: TestVolumeBinding (26.17s)
 === RUN   TestVolumeBindingRescheduling

@@ -19,6 +19,8 @@ public class HistoricalValue implements Binarylizable, Serializable {
     private long ver;
     private long lease;
 
+    static final HistoricalValue TOMBSTONE = new HistoricalValue(null, 0, 0, 0);
+
     HistoricalValue(byte[] val, long crtRev, long ver, long lease) {
         this.val = val;
         this.crtRev = crtRev;
@@ -52,8 +54,15 @@ public class HistoricalValue implements Binarylizable, Serializable {
      * @return the ID of the lease that attached to key. When the attached lease expires, the key will be deleted.
      * If lease is 0, then no lease is attached to the key.
      */
-    public long lease() {
+    long lease() {
         return lease;
+    }
+
+    /**
+     * @return {@code true} if this "entry deleted" marker (tombstone).
+     */
+    boolean isTombstone() {
+        return createRevision() == 0;
     }
 
     @Override

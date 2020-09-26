@@ -121,17 +121,6 @@ public final class KV {
         return Rpc.CompactionResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision())).build();
     }
 
-    private void putTombstone(Key start, long rev) {
-        histCache.put(new HistoricalKey(start, rev), new HistoricalValue(null, 0, 0, 0));
-    }
-
-    private void putTombstone(Set<Key> keys, long rev) {
-        histCache.putAll(keys.stream().collect(Collectors.toMap(
-            k -> new HistoricalKey(k, rev),
-            k -> new HistoricalValue(null, 0, 0, 0)
-        )));
-    }
-
     /**
      * Optimization to get Value without payload since payloads in Kubernetes can be large.
      * @param k Key
@@ -678,7 +667,7 @@ public final class KV {
             log.trace(
                 "PutRequest {key: " + reqKey.toStringUtf8() +
                     ", value: " + reqVal.toStringUtf8() +
-                    ", lease: " + lease + " / " + String.format("%16x", lease) +
+                    (lease > 0 ? ", lease: " + lease + " / " + String.format("%16x", lease) : "") +
                     "}"
             );
 
@@ -762,7 +751,7 @@ public final class KV {
                 removed = cache.remove(start);
 
             if (removed) {
-                putTombstone(start, rev);
+                histCache.put(new HistoricalKey(start, rev), HistoricalValue.TOMBSTONE);
                 cnt++;
             }
         } else {
@@ -773,7 +762,10 @@ public final class KV {
                     prevVals = cache.getAll(keys);
 
                 cache.removeAll(keys);
-                putTombstone(keys, rev);
+                histCache.putAll(keys.stream().collect(Collectors.toMap(
+                    k -> new HistoricalKey(k, rev),
+                    k -> HistoricalValue.TOMBSTONE
+                )));
             }
 
             cnt = keys.size();
