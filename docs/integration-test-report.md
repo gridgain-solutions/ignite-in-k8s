@@ -1,27 +1,7 @@
 # Kubernetes Integration Test Report
 
 ## Failures  
-| Test | Failure Cause
-| -----|--------------
-| `apiserver/TestMetadataClient` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/TestAPICRDProtobuf` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/TestTransform` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/apply/TestApplyCRDNoSchema` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/apply/TestApplyCRDStructuralSchema` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/apply/TestApplyCRDNonStructuralSchema` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/apply/TestApplyCRDUnhandledSchema` | [Historical Watch](https://github.com/gridgain-solutions/ignite-in-k8s/issues/25)
-| `apiserver/apply/TestCreateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `apiserver/apply/TestUpdateVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `apiserver/apply/TestPatchVeryLargeObject` | [Updating too large an object succeeds but should fail](https://github.com/gridgain-solutions/ignite-in-k8s/issues/38)
-| `client/TestAtomicPut` | [PUT not atomic](https://github.com/gridgain-solutions/ignite-in-k8s/issues/40)
-| `client/TestSingleWatch` | [Watch took longer than TIMEOUT](https://github.com/gridgain-solutions/ignite-in-k8s/issues/41)
-| `daemonset/TestSimpleDaemonSetLaunchesPods` | [Apiserver received an error that is not an metav1.Status](https://github.com/gridgain-solutions/ignite-in-k8s/issues/43)
-| `etcd/TestCrossGroupStorage` | [Timed out waiting for watch event for v1 in response to persisting v1](https://github.com/gridgain-solutions/ignite-in-k8s/issues/44)
-| `garbagecollector/TestCustomResourceCascadingDeletion` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
-| `garbagecollector/TestMixedRelationships` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
-| `garbagecollector/TestCRDDeletionCascading` | [Failed to create CustomResourceDefinition: gave up waiting for watch event](https://github.com/gridgain-solutions/ignite-in-k8s/issues/45)
-| `scheduler/TestPreemptionRaces` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
-| `scheduler/TestNominatedNodeCleanUp` | [Pod didn't get scheduled: timed out waiting for the condition](https://github.com/gridgain-solutions/ignite-in-k8s/issues/47)
+None
 
 ## Report
 ```
@@ -96,11 +76,15 @@
 === RUN   TestNameInFieldSelector
 --- PASS: TestNameInFieldSelector (5.67s)
 === RUN   TestMetadataClient
---- FAIL: TestMetadataClient (11.89s)
+--- PASS: TestMetadataClient (8.42s)
+    --- PASS: TestMetadataClient/list,_get,_patch,_and_delete_via_metadata_client (0.10s)
+    --- PASS: TestMetadataClient/list,_get,_patch,_and_delete_via_metadata_client_on_a_CRD (0.30s)
+    --- PASS: TestMetadataClient/watch_via_metadata_client (0.02s)
+    --- PASS: TestMetadataClient/watch_via_metadata_client_on_a_CRD (0.02s)
 === RUN   TestAPICRDProtobuf
---- FAIL: TestAPICRDProtobuf (36.53s)
+--- PASS: TestAPICRDProtobuf (8.81s)
 === RUN   TestTransform
---- FAIL: TestTransform (36.29s)
+--- PASS: TestTransform (6.74s)
 === RUN   TestMaxJSONPatchOperations
 --- PASS: TestMaxJSONPatchOperations (6.95s)
 === RUN   TestMaxResourceSize
@@ -147,13 +131,13 @@
 --- PASS: TestServerSidePrint (10.92s)
 === RUN   TestWebhookAdmissionWithWatchCache
 === RUN   TestApplyCRDNoSchema
---- FAIL: TestApplyCRDNoSchema (33.34s)
+--- PASS: TestApplyCRDNoSchema (18.92s)
 === RUN   TestApplyCRDStructuralSchema
---- FAIL: TestApplyCRDStructuralSchema (32.60s)
+--- PASS: TestApplyCRDStructuralSchema (16.37s)
 === RUN   TestApplyCRDNonStructuralSchema
---- FAIL: TestApplyCRDNonStructuralSchema (32.08s)
+--- PASS: TestApplyCRDNonStructuralSchema (15.37s)
 === RUN   TestApplyCRDUnhandledSchema
---- FAIL: TestApplyCRDUnhandledSchema (31.71s)
+--- PASS: TestApplyCRDUnhandledSchema (17.82s)
 === RUN   TestApplyAlsoCreates
 --- PASS: TestApplyAlsoCreates (5.74s)
 === RUN   TestNoOpUpdateSameResourceVersion
@@ -165,11 +149,11 @@
 === RUN   TestApplyGroupsManySeparateUpdates
 --- PASS: TestApplyGroupsManySeparateUpdates (6.00s)
 === RUN   TestCreateVeryLargeObject
---- FAIL: TestCreateVeryLargeObject (7.62s)
+--- PASS: TestCreateVeryLargeObject (5.14s)
 === RUN   TestUpdateVeryLargeObject
---- FAIL: TestUpdateVeryLargeObject (8.66s)
+--- PASS: TestUpdateVeryLargeObject (5.92s)
 === RUN   TestPatchVeryLargeObject
---- FAIL: TestPatchVeryLargeObject (21.97s)
+--- PASS: TestPatchVeryLargeObject (6.72s)
 === RUN   TestApplyManagedFields
 --- PASS: TestApplyManagedFields (8.32s)
 === RUN   TestApplyRemovesEmptyManagedFields
@@ -356,7 +340,7 @@
 === RUN   TestClient
 --- PASS: TestClient (7.69s)
 === RUN   TestAtomicPut
---- FAIL: TestAtomicPut (31.60s)
+--- PASS: TestAtomicPut (8.14s)
 === RUN   TestPatch
 --- PASS: TestPatch (7.56s)
 === RUN   TestPatchWithCreateOnUpdate
@@ -364,7 +348,7 @@
 === RUN   TestAPIVersions
 --- PASS: TestAPIVersions (7.61s)
 === RUN   TestSingleWatch
---- FAIL: TestSingleWatch (32.66s)
+--- PASS: TestSingleWatch (16.32s)
 === RUN   TestMultiWatch
 === RUN   TestSelfLinkOnNamespace
 --- PASS: TestSelfLinkOnNamespace (7.94s)
@@ -385,9 +369,9 @@
 === RUN   TestSimpleDaemonSetLaunchesPods
 === RUN   TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
---- FAIL: TestSimpleDaemonSetLaunchesPods (70.53s)
+--- PASS: TestSimpleDaemonSetLaunchesPods (43.69s)
     --- PASS: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,}) (20.86s)
-    --- FAIL: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (49.67s)
+    --- PASS: TestSimpleDaemonSetLaunchesPods/TestSimpleDaemonSetLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},}) (22.83s)
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:OnDelete,RollingUpdate:nil,})
 === RUN   TestDaemonSetWithNodeSelectorLaunchesPods/TestDaemonSetWithNodeSelectorLaunchesPods_(&DaemonSetUpdateStrategy{Type:RollingUpdate,RollingUpdate:&RollingUpdateDaemonSet{MaxUnavailable:1,},})
@@ -588,9 +572,9 @@
 === RUN   TestCrossGroupStorage
 === RUN   TestCrossGroupStorage//v1,_Kind=Event
 === RUN   TestCrossGroupStorage/networking.k8s.io/v1beta1,_Kind=Ingress
---- FAIL: TestCrossGroupStorage (71.79s)
+--- PASS: TestCrossGroupStorage (0.30s)
     --- PASS: TestCrossGroupStorage/networking.k8s.io/v1beta1,_Kind=Ingress (0.05s)
-    --- FAIL: TestCrossGroupStorage//v1,_Kind=Event (60.06s)
+    --- PASS: TestCrossGroupStorage//v1,_Kind=Event (0.25s)
 === RUN   TestEtcdStoragePath
 === RUN   TestEtcdStoragePath//v1,_Resource=configmaps
 === RUN   TestEtcdStoragePath//v1,_Resource=endpoints
@@ -780,11 +764,11 @@
 === RUN   TestBlockingOwnerRefDoesBlock
 --- PASS: TestBlockingOwnerRefDoesBlock (23.24s)
 === RUN   TestCustomResourceCascadingDeletion
---- FAIL: TestCustomResourceCascadingDeletion (34.76s)
+--- PASS: TestCustomResourceCascadingDeletion (19.32s)
 === RUN   TestMixedRelationships
---- FAIL: TestMixedRelationships (39.30s)
+--- PASS: TestMixedRelationships (18.61s)
 === RUN   TestCRDDeletionCascading
---- FAIL: TestCRDDeletionCascading (36.54s)
+--- PASS: TestCRDDeletionCascading (15.04s)
 === RUN   TestPerformance
 === RUN   TestWatchBasedManager
 --- PASS: TestWatchBasedManager (12.85s)
@@ -1007,9 +991,9 @@
 === RUN   TestPreemptionStarvation
 --- PASS: TestPreemptionStarvation (6.54s)
 === RUN   TestPreemptionRaces
---- FAIL: TestPreemptionRaces (34.34s)
+--- PASS: TestPreemptionRaces (7.71s)
 === RUN   TestNominatedNodeCleanUp
---- FAIL: TestNominatedNodeCleanUp (35.22s)
+--- PASS: TestNominatedNodeCleanUp (35.22s)
 === RUN   TestPDBInPreemption
 --- PASS: TestPDBInPreemption (18.48s)
 === RUN   TestNodeAffinity
