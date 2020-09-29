@@ -115,7 +115,7 @@ public class Cmd {
             .addService(new KV(ignite, kvCacheName, kvHistCacheName, leaseCacheName))
             .addService(new Lease(ignite, leaseCacheName, kvCacheName, kvHistCacheName))
             .addService(new Maintenance(ignite))
-            .addService(new Watch(ignite, kvCacheName))
+            .addService(new Watch(ignite, kvCacheName, kvHistCacheName))
             .addService(ProtoReflectionService.newInstance())
             .addService(health.getHealthService());
 

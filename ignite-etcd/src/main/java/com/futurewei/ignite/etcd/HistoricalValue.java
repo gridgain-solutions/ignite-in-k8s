@@ -43,8 +43,12 @@ public class HistoricalValue implements Binarylizable, Serializable {
     }
 
     /**
-     * @return version of the key. A deletion resets the version to zero and any modification of the key increases
-     * its version.
+     * @return A key’s life spans a generation, from creation to deletion. Each key may have one or multiple
+     * generations. Creating a key increments the version of that key, starting at 1 if the key does not exist at
+     * the current revision. Deleting a key generates a key tombstone, concluding the key’s current generation by
+     * resetting its version to 0. Each modification of a key increments its version; so, versions are monotonically
+     * increasing within a key’s generation. Once a compaction happens, any generation ended before the compaction
+     * revision will be removed, and values set before the compaction revision except the latest one will be removed.
      */
     long version() {
         return ver;
@@ -62,7 +66,7 @@ public class HistoricalValue implements Binarylizable, Serializable {
      * @return {@code true} if this "entry deleted" marker (tombstone).
      */
     boolean isTombstone() {
-        return createRevision() == 0;
+        return version() == 0;
     }
 
     @Override

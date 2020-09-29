@@ -58,7 +58,7 @@ public final class KV {
      * @throws IndexOutOfBoundsException if the specified revision does not exist.
      */
     public Rpc.RangeResponse range(Rpc.RangeRequest req) {
-        return rangeNonTx(req, false);
+        return transaction(60000, 0, () -> rangeNonTx(req, new TxnContext(ctx), false));
     }
 
     /**
@@ -66,7 +66,7 @@ public final class KV {
      * and generates one event in the event history.
      */
     public Rpc.PutResponse put(Rpc.PutRequest req) {
-        return transaction(3000, 1, () -> putNonTx(req));
+        return transaction(3000, 1, () -> putNonTx(req, new TxnContext(ctx)));
     }
 
     /**
@@ -74,7 +74,7 @@ public final class KV {
      * store and generates a delete event in the event history for every deleted key.
      */
     public Rpc.DeleteRangeResponse deleteRange(Rpc.DeleteRangeRequest req) {
-        return transaction(10000, 0, () -> deleteRangeNonTx(req));
+        return transaction(10000, 0, () -> deleteRangeNonTx(req, new TxnContext(ctx)));
     }
 
     /**
@@ -83,7 +83,7 @@ public final class KV {
      * key several times within one txn.
      */
     public Rpc.TxnResponse txn(Rpc.TxnRequest req) {
-        return transaction(60000, 0, () -> txnNonTx(req));
+        return transaction(60000, 0, () -> txnNonTx(req, new TxnContext(ctx)));
     }
 
     /**
@@ -93,15 +93,16 @@ public final class KV {
      * @throws IndexOutOfBoundsException if the specified revision does not exist.
      */
     public Rpc.CompactionResponse compact(Rpc.CompactionRequest req) {
+        // the key-value store revision when the request was applied
+        final long curRev = ctx.revision();
+
         // the key-value store revision for the compaction operation
         long compactRev = req.getRevision();
 
-        long rev = ctx.revision();
+        if (compactRev == curRev)
+            compactRev = curRev - 1;
 
-        if (compactRev == rev)
-            compactRev = rev - 1;
-
-        if (compactRev > rev)
+        if (compactRev > curRev)
             throw new IndexOutOfBoundsException("Required revision is a future revision");
         else if (compactRev > 0) {
             Long delCnt = (Long) histCache.query(
@@ -118,12 +119,13 @@ public final class KV {
                 );
         }
 
-        return Rpc.CompactionResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision())).build();
+        return Rpc.CompactionResponse.newBuilder().setHeader(EtcdCluster.getHeader(curRev)).build();
     }
 
     /**
      * Optimization to get Value without payload since payloads in Kubernetes can be large.
-     * @param k Key
+     *
+     * @param k             Key
      * @param txModifiesKey {@code true} if this method is called in a transaction modifying the key.
      * @return Value associated with the key without {@link Value#value()}
      */
@@ -323,15 +325,18 @@ public final class KV {
         return false;
     }
 
-    private Rpc.ResponseOp exec(Rpc.RequestOp req) {
+    private Rpc.ResponseOp exec(Rpc.RequestOp req, TxnContext txnCtx) {
         if (req.hasRequestRange())
-            return Rpc.ResponseOp.newBuilder().setResponseRange(rangeNonTx(req.getRequestRange(), true)).build();
-        if (req.hasRequestPut())
-            return Rpc.ResponseOp.newBuilder().setResponsePut(putNonTx(req.getRequestPut())).build();
-        if (req.hasRequestDeleteRange())
-            return Rpc.ResponseOp.newBuilder().setResponseDeleteRange(deleteRangeNonTx(req.getRequestDeleteRange()))
+            return Rpc.ResponseOp.newBuilder()
+                .setResponseRange(rangeNonTx(req.getRequestRange(), txnCtx, true))
                 .build();
-        return Rpc.ResponseOp.newBuilder().setResponseTxn(txnNonTx(req.getRequestTxn())).build();
+        if (req.hasRequestPut())
+            return Rpc.ResponseOp.newBuilder().setResponsePut(putNonTx(req.getRequestPut(), txnCtx)).build();
+        if (req.hasRequestDeleteRange())
+            return Rpc.ResponseOp.newBuilder()
+                .setResponseDeleteRange(deleteRangeNonTx(req.getRequestDeleteRange(), txnCtx))
+                .build();
+        return Rpc.ResponseOp.newBuilder().setResponseTxn(txnNonTx(req.getRequestTxn(), txnCtx)).build();
     }
 
     /**
@@ -480,24 +485,36 @@ public final class KV {
                 return cache.size();
         }
 
-        Collection<Object> sqlArgs = new ArrayList<>();
+        if (rev <= 0) {
+            Collection<Object> sqlArgs = new ArrayList<>();
 
-        String tbl = rev <= 0 ? "ETCD_KV" : "ETCD_KV_HISTORY";
+            String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
 
-        String sqlFilter = sqlFilter(sqlArgs, start, end, minModRev, maxModRev, minCrtRev, maxCrtRev);
+            String sql = "SELECT COUNT(*) FROM ETCD_KV" + (sqlFilter.isEmpty() ? "" : " WHERE " + sqlFilter);
 
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM ").append(tbl);
+            return (Long) cache.query(new SqlFieldsQuery(sql).setArgs(sqlArgs.toArray()))
+                .getAll().iterator().next().iterator().next();
+        } else {
+            // Cannot write a complete historical query due to the "WHERE Subquery" limitation explained in method
+            // range(). For historical count get number of elements in historical range.
+            // TODO: the "WHERE Subquery" limitation will be fixed in Calcite-based Ignite, remove the workaround.
+            Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
+                false,
+                start,
+                end,
+                rev,
+                0,
+                minModRev,
+                maxModRev,
+                minCrtRev,
+                maxCrtRev,
+                true,
+                Rpc.RangeRequest.SortOrder.NONE,
+                Rpc.RangeRequest.SortTarget.UNRECOGNIZED
+            );
 
-        if (!sqlFilter.isEmpty())
-            sql.append("\nWHERE ").append(sqlFilter);
-
-        if (rev > 0) {
-            sql.append(sqlFilter.isEmpty() ? "\nWHERE " : " AND ").append("MODIFY_REVISION = ?");
-            sqlArgs.add(rev);
+            return kvs.size();
         }
-
-        return (Long) cache.query(new SqlFieldsQuery(sql.toString()).setArgs(sqlArgs.toArray()))
-            .getAll().iterator().next().iterator().next();
     }
 
     private Set<Key> keysInRange(Key start, Key end) {
@@ -532,8 +549,10 @@ public final class KV {
      *
      * @param txModifiesKey See {@link #getWithoutPayload(Key, boolean)}.
      */
-    private Rpc.RangeResponse rangeNonTx(Rpc.RangeRequest req, boolean txModifiesKey) {
-        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(ctx.revision()));
+    private Rpc.RangeResponse rangeNonTx(Rpc.RangeRequest req, TxnContext txnCtx, boolean txModifiesKey) {
+        final long curRev = txnCtx.currentRevision(false);
+
+        Rpc.RangeResponse.Builder res = Rpc.RangeResponse.newBuilder().setHeader(EtcdCluster.getHeader(curRev));
 
         // the first key for the range. If range_end is not given, the request only looks up key.
         ByteString key = req.getKey();
@@ -581,8 +600,6 @@ public final class KV {
         // will be filtered away.
         long maxCrtRev = req.getMaxCreateRevision();
 
-        long curRev = ctx.revision();
-
         if (rev > curRev)
             throw new IndexOutOfBoundsException("Required revision is a future revision");
         else if (rev == curRev)
@@ -615,12 +632,20 @@ public final class KV {
         if (cntOnly) {
             long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
             res.setCount(cnt);
+
+            if (log.isTraceEnabled())
+                log.trace("RangeResponse {rev: " + res.getHeader().getRevision() +  ", count: " + cnt + "}");
         } else {
+            // If limit > 0 we have to limit entries and return total number of entries. We cannot have separate
+            // range(limit) and count() since SQL is used for complex queries and SQL is not transactional (SQL "sees"
+            // uncommitted changes). This may lead to range() would be inconsistent with count().
+            // Thus we use single range() without limit to get ALL entries and limit them on this node. This is
+            // inefficient and may need to be optimized.
             Collection<SimpleImmutableEntry<Key, Value>> kvs = range(
                 txModifiesKey,
                 start,
                 end,
-                limit,
+                0, // get all entries due to the problem described above
                 rev,
                 minModRev,
                 maxModRev,
@@ -632,17 +657,17 @@ public final class KV {
             );
 
             if (limit > 0) {
-                long cnt = count(start, end, rev, minModRev, maxModRev, minCrtRev, maxCrtRev);
-                res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
+                long cnt = kvs.size();
+                res.addAllKvs(kvs.stream().limit(limit).map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
                     .setCount(cnt)
-                    .setMore(cnt > kvs.size());
+                    .setMore(cnt > limit);
             } else
                 res.addAllKvs(kvs.stream().map(e -> PBFormat.kv(e, keysOnly)).collect(Collectors.toList()))
                     .setCount(kvs.size());
 
             if (log.isTraceEnabled())
                 log.trace(
-                    "RangeResponse {keys: [" +
+                    "RangeResponse {rev: " + res.getHeader().getRevision() + ", keys: [" +
                         String.join(
                             ", ",
                             kvs.stream()
@@ -658,7 +683,7 @@ public final class KV {
     /**
      * Non-transactional {@link #put(Rpc.PutRequest)}.
      */
-    private Rpc.PutResponse putNonTx(Rpc.PutRequest req) {
+    private Rpc.PutResponse putNonTx(Rpc.PutRequest req, TxnContext txnCtx) {
         ByteString reqKey = req.getKey();
         ByteString reqVal = req.getValue();
         long lease = req.getLease();
@@ -671,15 +696,15 @@ public final class KV {
                     "}"
             );
 
-        long rev;
+        long curRev;
 
         if (!reqKey.isEmpty() && !reqVal.isEmpty()) {
-            rev = ctx.incrementRevision();
+            curRev = txnCtx.currentRevision(true);
 
             Key k = new Key(reqKey.toByteArray());
             Value val = getWithoutPayload(k, true);
             long ver = val == null ? 1 : val.version() + 1;
-            long crtRev = val == null ? rev : val.createRevision();
+            long crtRev = val == null ? curRev : val.createRevision();
 
             HistoricalValue hVal = new HistoricalValue(reqVal.toByteArray(), crtRev, ver, lease);
 
@@ -701,18 +726,24 @@ public final class KV {
                 leasedHistCache = histCache.withExpiryPolicy(expPlc);
             }
 
-            leasedCache.put(k, new Value(hVal, rev));
-            leasedHistCache.put(new HistoricalKey(k, rev), hVal);
+            leasedCache.put(k, new Value(hVal, curRev));
+            leasedHistCache.put(new HistoricalKey(k, curRev), hVal);
         } else
-            rev = ctx.revision();
+            curRev = txnCtx.currentRevision(false);
 
-        return Rpc.PutResponse.newBuilder().setHeader(EtcdCluster.getHeader(rev)).build();
+        if (log.isTraceEnabled())
+            log.trace("PutResponse {rev: " + curRev + "}");
+
+        return Rpc.PutResponse.newBuilder().setHeader(EtcdCluster.getHeader(curRev)).build();
     }
 
     /**
      * Non-transactional {@link #deleteRange(Rpc.DeleteRangeRequest)}.
      */
-    private Rpc.DeleteRangeResponse deleteRangeNonTx(Rpc.DeleteRangeRequest req) {
+    private Rpc.DeleteRangeResponse deleteRangeNonTx(Rpc.DeleteRangeRequest req, TxnContext txnCtx) {
+        // the key-value store revision when the request was applied
+        final long curRev = txnCtx.currentRevision(true);
+
         // key is the first key to delete in the range.
         ByteString key = req.getKey();
 
@@ -727,15 +758,25 @@ public final class KV {
         // The previous key-value pairs will be returned in the delete response.
         boolean prevKv = req.getPrevKv();
 
-        long rev = ctx.incrementRevision();
         long cnt = 0;
         Map<Key, Value> prevVals = null;
 
         Rpc.DeleteRangeResponse.Builder res = Rpc.DeleteRangeResponse.newBuilder()
-            .setHeader(EtcdCluster.getHeader(rev));
+            .setHeader(EtcdCluster.getHeader(curRev));
 
         Key start = new Key(key.toByteArray());
         Key end = rangeEnd.isEmpty() ? null : new Key(rangeEnd.toByteArray());
+
+        if (log.isTraceEnabled()) {
+            StringBuilder s = new StringBuilder("DeleteRangeRequest {")
+                .append("key: ").append(key.toStringUtf8());
+            if (!rangeEnd.isEmpty())
+                s.append(", rangeEnd: ").append(rangeEnd.toStringUtf8());
+            if (prevKv)
+                s.append(", prevKv: true");
+            s.append("}");
+            log.trace(s.toString());
+        }
 
         if (!start.isZero() && end == null) {
             // Optimization for single key removal
@@ -751,7 +792,7 @@ public final class KV {
                 removed = cache.remove(start);
 
             if (removed) {
-                histCache.put(new HistoricalKey(start, rev), HistoricalValue.TOMBSTONE);
+                histCache.put(new HistoricalKey(start, curRev), HistoricalValue.TOMBSTONE);
                 cnt++;
             }
         } else {
@@ -763,13 +804,16 @@ public final class KV {
 
                 cache.removeAll(keys);
                 histCache.putAll(keys.stream().collect(Collectors.toMap(
-                    k -> new HistoricalKey(k, rev),
+                    k -> new HistoricalKey(k, curRev),
                     k -> HistoricalValue.TOMBSTONE
                 )));
             }
 
             cnt = keys.size();
         }
+
+        if (log.isTraceEnabled())
+            log.trace("DeleteRangeResponse {rev: " + curRev + ", deleted: " + cnt + "}");
 
         if (prevVals != null)
             res.addAllPrevKvs(prevVals.entrySet().stream().map(PBFormat::kv).collect(Collectors.toList()));
@@ -780,22 +824,21 @@ public final class KV {
     /**
      * Non-transactional {@link #txn(Rpc.TxnRequest)}.
      */
-    private Rpc.TxnResponse txnNonTx(Rpc.TxnRequest req) {
+    private Rpc.TxnResponse txnNonTx(Rpc.TxnRequest req, TxnContext txnCtx) {
         List<Rpc.Compare> cmpReqList = req.getCompareList();
         Collection<Rpc.ResponseOp> resList = null;
         boolean ok = false;
 
         if (cmpReqList.size() > 0) {
-            // TODO: SQL used for some range queries is not transactional
             ok = cmpReqList.stream().allMatch(this::check);
 
             List<Rpc.RequestOp> reqList = ok ? req.getSuccessList() : req.getFailureList();
 
-            resList = reqList.stream().map(this::exec).collect(Collectors.toList());
+            resList = reqList.stream().map(r -> exec(r, txnCtx)).collect(Collectors.toList());
         }
 
         Rpc.TxnResponse.Builder res = Rpc.TxnResponse.newBuilder()
-            .setHeader(EtcdCluster.getHeader(ctx.revision()))
+            .setHeader(EtcdCluster.getHeader(txnCtx.currentRevision(false)))
             .setSucceeded(ok);
 
         if (resList != null)
@@ -888,6 +931,37 @@ public final class KV {
             } catch (TransactionOptimisticException ignored) {
                 // Retry optimistic transaction
             }
+        }
+    }
+
+    /**
+     * Transaction context: use from single thread.
+     */
+    private static final class TxnContext {
+        private final EtcdCluster clusterCtx;
+        long curRev = 0;
+        boolean isModified = false;
+
+        private TxnContext(EtcdCluster clusterCtx) {
+            this.clusterCtx = clusterCtx;
+        }
+
+        /**
+         * @param isModification {@code true} if the revision is requested for a modification operation.
+         * @return The key-value store revision when the request was applied. The revision is incremented if the
+         * transaction has at least one modification operation. The revision is incremented once even if there are
+         * multiple modification operations.
+         */
+        long currentRevision(boolean isModification) {
+            if (!isModified) {
+                if (isModification) {
+                    curRev = clusterCtx.incrementRevision();
+                    isModified = true;
+                } else if (curRev == 0)
+                    curRev = clusterCtx.revision();
+            }
+
+            return curRev;
         }
     }
 }

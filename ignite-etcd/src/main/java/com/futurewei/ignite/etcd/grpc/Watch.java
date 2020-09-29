@@ -13,8 +13,8 @@ public final class Watch extends WatchGrpc.WatchImplBase {
     private final com.futurewei.ignite.etcd.Watch impl;
     private final AtomicLong streamId = new AtomicLong(1);
 
-    public Watch(Ignite ignite, String cacheName) {
-        impl = new com.futurewei.ignite.etcd.Watch(ignite, cacheName);
+    public Watch(Ignite ignite, String cacheName, String histCacheName) {
+        impl = new com.futurewei.ignite.etcd.Watch(ignite, cacheName, histCacheName);
     }
 
     @Override
