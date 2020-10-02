@@ -26,6 +26,7 @@ public class Cmd {
         final String GRPC_KA_MIN_TIME_OPT = "gpm";
         final String GRPC_KA_WO_STREAM_OPT = "gpa";
         final String HELP_OPT = "h";
+        final String VER_OPT = "v";
         final int DFLT_PORT = 2379;
         final String DFLT_KV_CACHE = "etcd_kv";
         final String DFLT_KV_HIST_CACHE = "etcd_kv_history";
@@ -89,11 +90,17 @@ public class Cmd {
                 false,
                 "Allows clients to ping the server without any active streams (denied by default)."
             )
-            .addOption(HELP_OPT, "help", false, "print usage");
+            .addOption(HELP_OPT, "help", false, "print usage")
+            .addOption(VER_OPT, "version", false, "print version");
         CommandLine cmd = new DefaultParser().parse(options, args);
 
         if (cmd.hasOption(HELP_OPT)) {
             new HelpFormatter().printHelp(110, "ignite-etcd", null, options, null);
+            System.exit(0);
+        }
+
+        if (cmd.hasOption(VER_OPT)) {
+            System.out.println("1.0.0-SNAPSHOT");
             System.exit(0);
         }
 
