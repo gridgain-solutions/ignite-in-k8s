@@ -1,0 +1,21 @@
+syntax = "proto3";
+package etcd;
+
+import "google/api/annotations.proto";
+
+/**
+ * Legacy ETCD HTTP 1.1 Health endpoint. Although kube-apiserver v1.19+ switched to using native gRPC HTTP2 Health
+ * service, some Kubernetes infrastructure components still need the legacy "/health" endpoint.
+ */
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse) {
+    option (google.api.http) = { get: "/health" };
+  }
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  bool health = 1;
+  string reason = 2;
+}

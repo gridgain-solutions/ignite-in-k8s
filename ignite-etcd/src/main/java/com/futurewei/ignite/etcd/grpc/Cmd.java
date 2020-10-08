@@ -4,6 +4,7 @@ import com.futurewei.ignite.etcd.CacheConfig;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.health.v1.HealthCheckResponse;
+import io.grpc.health.v1.HealthGrpc;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.services.HealthStatusManager;
@@ -115,6 +116,7 @@ public class Cmd {
         String leaseCacheName = cmd.hasOption(LEASE_CACHE_OPT) ? cmd.getOptionValue(LEASE_CACHE_OPT) : DFLT_LEASE_CACHE;
 
         HealthStatusManager health = new HealthStatusManager();
+        HealthGrpc.HealthImplBase healthSvc = (HealthGrpc.HealthImplBase)health.getHealthService();
 
         ServerBuilder<?> srvBuilder = ServerBuilder.forPort(srvPort)
             .addService(new Auth(ignite))
@@ -123,8 +125,9 @@ public class Cmd {
             .addService(new Lease(ignite, leaseCacheName, kvCacheName, kvHistCacheName))
             .addService(new Maintenance(ignite))
             .addService(new Watch(ignite, kvCacheName, kvHistCacheName))
+            .addService(new Health(healthSvc))
             .addService(ProtoReflectionService.newInstance())
-            .addService(health.getHealthService());
+            .addService(healthSvc);
 
         if (srvBuilder instanceof NettyServerBuilder) {
             long keepAliveTime = cmd.hasOption(GRPC_KA_INTERVAL_OPT)

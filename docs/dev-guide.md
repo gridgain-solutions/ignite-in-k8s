@@ -45,8 +45,10 @@
   - With `etcdctl` (`alias etcdctl="$K8S_REPO/third_party/etcd/etcdctl --endpoints=127.0.0.1:2379 -w=json --command-timeout=600s --keepalive-timeout=600s"`):
     - [Examples from etcd documentation](https://etcd.io/docs/v3.4.0/dev-guide/interacting_v3/)
     - All keys wih history: `etcdctl get "" --from-key` 
-  - With `curl`:
-    - `curl -s -H 'Accept: application/json' -H 'Content-Type: application/json'  -d '{"key": [0], "range_end": [0], "max_mod_revision": 7}' -X POST http://localhost:2479/v3/kv/range`
+  - With [`grpcurl`](https://github.com/fullstorydev/grpcurl):
+        - `grpcurl -plaintext localhost:2379 list`
+    - `grpcurl -plaintext localhost:2379 describe etcdserverpb.KV`
+    - `grpcurl -plaintext -d '{"key": "YQ=="}' localhost:2379 etcdserverpb.KV/Range`
   - With `kubectl` (`alias kubectl="$K8S_REPO/_output/bin/kubectl"`):
     - `kubectl get nodes`
     - `kubectl apply -f busybox-sleep.yaml`    
