@@ -253,7 +253,18 @@ counter updates are (the applicability of each mechanic is the subject of furthe
  stored in the KV service: there will be a range of versions for which there are no corresponding updates stored in the
  KV service.
  * Use a hybrid approach combining local timestamps, node identifiers and local counters. In this case, a 3-tuple is 
- encoded in the 64-bit value having (from MSB to LSB) local timestamp, local update counter and node identifier. 
+ encoded in the 64-bit value having (from MSB to LSB) local timestamp, local update counter and node identifier. This
+ implementation requires having an external clock synchronization (for example, using NTP service) and knowing the 
+ maximum time difference between nodes. When a watch query is executed, we should start at a timestamp which is shifted
+ to the past by the maximum time difference between nodes in the cluster. This may produce some events duplicates which
+ should be handled by the client.
+ * The hybrid approach can be further improved using the Hybrid Logical Clock approach [3] to capture causal 
+ relationships between consequitive updates on different nodes. This improvement does not remove the necessity to track
+ the maximum time drift between nodes and adjust the watch start boundary at the query start. The paper suggest using 
+ the 48 bits of the long for timestamp and the remaining 16 bits for local update counter. The straightworward usage of 
+ this scheme does not produce unique identifiers, so appending a node ID should resolve this problem. However, appending
+ a node ID would requrie expanding the ``mod_revision`` size beyond 8 bytes. While theoretically feasible, this would 
+ require a substantial change in Kubernetes codebase and can be implemented later.    
  
 The key-value update will be executed as
 
@@ -336,3 +347,5 @@ authentication service and assume no need to implement the management service.
 [1] https://github.com/etcd-io/etcd/blob/release-3.4/etcdserver/etcdserverpb/rpc.proto
 
 [2] http://notes.stephenholiday.com/Percolator.pdf
+
+[3] https://cse.buffalo.edu/tech-reports/2014-04.pdf
