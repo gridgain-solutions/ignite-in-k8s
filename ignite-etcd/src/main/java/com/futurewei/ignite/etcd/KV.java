@@ -184,7 +184,7 @@ public final class KV {
     private boolean check(Rpc.Compare req) {
         ByteString key = req.getKey();
 
-        if (key != null && key.size() > 0) {
+        if (key.size() > 0) {
             int operation = req.getResultValue();
             int target = req.getTargetValue();
 

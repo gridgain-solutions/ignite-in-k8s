@@ -4,6 +4,7 @@ import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.QueryIndex;
+import org.apache.ignite.cache.QueryIndexType;
 import org.apache.ignite.configuration.CacheConfiguration;
 
 import java.util.Arrays;
@@ -22,8 +23,8 @@ public final class CacheConfig {
     public static String KVSpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL +
         "\nSQL: TABLE ETCD_KV (KEY BINARY, VALUE BINARY, MODIFY_REVISION BIGINT, CREATE_REVISION BIGINT, " +
         "VERSION BIGINT, LEASE BIGINT)" +
-        "\nPRIMARY KEY(KEY)" +
-        "\nINDEX(LEASE)";
+        "\n     PRIMARY KEY(KEY)" +
+        "\n     INDEX(LEASE)";
 
     /**
      * Users may define a KV History cache in the external configuration and specify the cache name as a parameter for
@@ -33,7 +34,11 @@ public final class CacheConfig {
     public static String KVHistorySpec = "atomicityMode: " + CacheAtomicityMode.TRANSACTIONAL +
         "\nSQL: TABLE ETCD_KV_HISTORY (KEY BINARY, VALUE BINARY, MODIFY_REVISION BIGINT, CREATE_REVISION BIGINT, " +
         "VERSION BIGINT, LEASE BIGINT)" +
-        "\nPRIMARY KEY(KEY, MODIFY_REVISION)";
+        "\n     PRIMARY KEY(KEY, MODIFY_REVISION)" +
+        "\n     INDEX(KEY)" +
+        "\n     INDEX(LEASE)" +
+        "\n     INDEX(MODIFY_REVISION)" +
+        "\n     INDEX(CREATE_REVISION)";
 
     /**
      * Users may define a Lease cache in the external configuration and specify the cache name as a parameter for
@@ -63,7 +68,10 @@ public final class CacheConfig {
                     .addQueryField("ver", long.class.getName(), "VERSION")
                     .addQueryField("lease", long.class.getName(), null)
                     .setKeyFields(new LinkedHashSet<>(Collections.singletonList("key"))) // use modifiable Set
-                    .setIndexes(Collections.singletonList(new QueryIndex("lease")))
+                    .setIndexes(Arrays.asList(
+                        new QueryIndex("key"),
+                        new QueryIndex("lease")
+                    ))
             )));
     }
 
@@ -87,6 +95,13 @@ public final class CacheConfig {
                     .addQueryField("ver", long.class.getName(), "VERSION")
                     .addQueryField("lease", long.class.getName(), null)
                     .setKeyFields(new LinkedHashSet<>(Arrays.asList("key", "modRev"))) // use modifiable Set
+                    .setIndexes(Arrays.asList(
+                        new QueryIndex(Arrays.asList("key", "modRev"), QueryIndexType.SORTED),
+                        new QueryIndex("key"),
+                        new QueryIndex("lease"),
+                        new QueryIndex("modRev"),
+                        new QueryIndex("crtRev")
+                    ))
             )));
     }
 
@@ -106,6 +121,7 @@ public final class CacheConfig {
                     .addQueryField("ttl", Long.class.getName(), null)
                     .addQueryField("etl", Long.class.getName(), null)
                     .setKeyFieldName("lease")
+                    .setIndexes(Collections.singletonList(new QueryIndex("lease")))
             ));
     }
 }
