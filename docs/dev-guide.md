@@ -70,6 +70,9 @@
     - Example of running single test `TestPodUpdateActiveDeadlineSeconds`:  
       `make test-integration WHAT=./test/integration/pods GOFLAGS="-v" KUBE_TEST_ARGS="-run ^TestPodUpdateActiveDeadlineSeconds$"`
 
+- Profiling
+  - With JFR: `-XX:StartFlightRecording=disk=true,dumponexit=true,filename=/tmp/ignite-etcd.jfr`
+
 - Problems and Solutions
   - **Problem**: Kubernetes integration tests fail with `context deadline exceeded` error in the log, for example:  
     `error in bringing up the master: problem initializing API group "autoscaling" : context deadline exceeded`

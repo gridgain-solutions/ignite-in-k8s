@@ -1,15 +1,6 @@
-FROM openjdk:8-jre-alpine
+FROM openjdk:11-jre-slim
 
 WORKDIR /opt/ignite-etcd
-
-# Add missing software
-#  - musl: ITDS-961
-RUN apk add --upgrade \
-        bash \
-        wget \
-        musl musl-utils libbz2 libtasn1 \
-    && \
-    rm -rfv /var/cache/apk/*
 
 COPY ignite-etcd/build/install/ignite-etcd /opt/ignite-etcd
 

@@ -54,8 +54,7 @@ public final class CacheConfig {
      */
     static CacheConfiguration<Key, Value> KV(String cacheName) {
         return TextKV.extend(new CacheConfiguration<Key, Value>(cacheName)
-            .setCacheMode(CacheMode.PARTITIONED)
-            .setBackups(1)
+            .setCacheMode(CacheMode.REPLICATED)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
             .setSqlSchema("PUBLIC")
             .setQueryEntities(Collections.singleton(
@@ -81,8 +80,7 @@ public final class CacheConfig {
      */
     static CacheConfiguration<HistoricalKey, HistoricalValue> KVHistory(String cacheName) {
         return TextKV.extend(new CacheConfiguration<HistoricalKey, HistoricalValue>(cacheName)
-            .setCacheMode(CacheMode.PARTITIONED)
-            .setBackups(1)
+            .setCacheMode(CacheMode.REPLICATED)
             .setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
             .setSqlSchema("PUBLIC")
             .setQueryEntities(Collections.singleton(
