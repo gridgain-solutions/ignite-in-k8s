@@ -145,10 +145,8 @@ public final class Watch {
             Executors.newCachedThreadPool(new NamedThreadFactory("etcd-watch"));
 
         /** Threads reporting events to the clients */
-        private static final ExecutorService reportExec = Executors.newFixedThreadPool(
-            8,
-            new NamedThreadFactory("etcd-watch-report")
-        );
+        private static final ExecutorService reportExec =
+            Executors.newCachedThreadPool(new NamedThreadFactory("etcd-watch-report"));
 
         private final EtcdCluster ctx;
         private final IgniteCache<Key, Value> cache;
@@ -199,7 +197,7 @@ public final class Watch {
         public String toString() {
             StringBuilder s = new StringBuilder("WatchRequest {")
                 .append("key: ").append(req.getKey().toStringUtf8());
-            if (req.getRangeEnd() != null && !req.getRangeEnd().isEmpty())
+            if (!req.getRangeEnd().isEmpty())
                 s.append(", rangeEnd: ").append(req.getRangeEnd().toStringUtf8());
             if (req.getStartRevision() > 0)
                 s.append(", startRev: ").append(req.getStartRevision());
