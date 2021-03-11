@@ -11,6 +11,8 @@ import io.grpc.services.HealthStatusManager;
 import org.apache.commons.cli.*;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.tracing.opencensus.OpenCensusTracingSpi;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +28,7 @@ public class Cmd {
         final String GRPC_KA_TIMEOUT_OPT = "gpt";
         final String GRPC_KA_MIN_TIME_OPT = "gpm";
         final String GRPC_KA_WO_STREAM_OPT = "gpa";
+        final String TRACE_OPT = "t";
         final String HELP_OPT = "h";
         final String VER_OPT = "v";
         final int DFLT_PORT = 2379;
@@ -42,27 +45,27 @@ public class Cmd {
                 IGNITE_CFG_OPT,
                 "ignite-config",
                 true,
-                "ignite configuration file (default configuration is used if not specified)"
+                "Ignite configuration file (default configuration is used if not specified)"
             )
             .addOption(
                 KV_CACHE_OPT,
                 "ignite-cache-kv",
                 true,
-                "ignite KV cache name (default \"" + DFLT_KV_CACHE + "\"). Already defined cache must conform to " +
+                "Ignite KV cache name (default \"" + DFLT_KV_CACHE + "\"). Already defined cache must conform to " +
                     "this specification:\n" + CacheConfig.KVSpec
             )
             .addOption(
                 KV_HIST_CACHE_OPT,
                 "ignite-cache-kv-history",
                 true,
-                "ignite KV cache name (default \"" + DFLT_KV_CACHE + "\"). Already defined cache must conform to " +
+                "Ignite KV cache name (default \"" + DFLT_KV_CACHE + "\"). Already defined cache must conform to " +
                     "this specification:\n" + CacheConfig.KVHistorySpec
             )
             .addOption(
                 LEASE_CACHE_OPT,
                 "ignite-cache-lease",
                 true,
-                "ignite Lease cache name (default \"" + DFLT_LEASE_CACHE + "\"). Already defined cache must conform " +
+                "Ignite Lease cache name (default \"" + DFLT_LEASE_CACHE + "\"). Already defined cache must conform " +
                     " to this specification:\n" + CacheConfig.LeaseSpec
             )
             .addOption(
@@ -91,8 +94,15 @@ public class Cmd {
                 false,
                 "Allows clients to ping the server without any active streams (denied by default)."
             )
-            .addOption(HELP_OPT, "help", false, "print usage")
-            .addOption(VER_OPT, "version", false, "print version");
+            .addOption(
+                TRACE_OPT,
+                "trace",
+                false,
+                "Enable tracing. tracingSpi must be specified in the Ignite configuration file. OpenCensus tracing " +
+                    "is used if no Ignite configuration file is specified"
+            )
+            .addOption(HELP_OPT, "help", false, "Print usage")
+            .addOption(VER_OPT, "version", false, "Print version");
         CommandLine cmd = new DefaultParser().parse(options, args);
 
         if (cmd.hasOption(HELP_OPT)) {
@@ -108,6 +118,8 @@ public class Cmd {
         int srvPort = cmd.hasOption(PORT_OPT) ? Integer.parseInt(cmd.getOptionValue(PORT_OPT)) : DFLT_PORT;
         Ignite ignite = cmd.hasOption(IGNITE_CFG_OPT)
             ? Ignition.start(cmd.getOptionValue(IGNITE_CFG_OPT))
+            : cmd.hasOption(TRACE_OPT)
+            ? Ignition.start(new IgniteConfiguration().setTracingSpi(new OpenCensusTracingSpi()))
             : Ignition.start();
         String kvCacheName = cmd.hasOption(KV_CACHE_OPT) ? cmd.getOptionValue(KV_CACHE_OPT) : DFLT_KV_CACHE;
         String kvHistCacheName = cmd.hasOption(KV_HIST_CACHE_OPT)

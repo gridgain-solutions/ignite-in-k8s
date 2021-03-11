@@ -16,6 +16,7 @@ def igniteVersion = '2.9.1'
 dependencies {
     implementation project(':etcd-proto')
     implementation "org.apache.ignite:ignite-core:${igniteVersion}"
+    implementation "org.apache.ignite:ignite-opencensus:${igniteVersion}"
     implementation 'commons-cli:commons-cli:1.4'
     implementation "io.grpc:grpc-services:${grpcVersion}"
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
