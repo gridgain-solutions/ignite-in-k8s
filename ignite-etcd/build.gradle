@@ -8,10 +8,14 @@ version '1.0.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://raw.github.com/dinowernli/maven-repos/master"
+    }
 }
 
 def grpcVersion = '1.35.0'
-def igniteVersion = '2.9.1'
+def igniteVersion = '2.10.0'
+def prometheusVersion = '0.10.0'
 
 dependencies {
     implementation project(':etcd-proto')
@@ -20,6 +24,10 @@ dependencies {
     implementation 'commons-cli:commons-cli:1.4'
     implementation "io.grpc:grpc-services:${grpcVersion}"
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.prometheus:simpleclient:${prometheusVersion}"
+    implementation "io.prometheus:simpleclient_hotspot:${prometheusVersion}"
+    implementation 'io.opencensus:opencensus-exporter-stats-prometheus:0.28.3'
+    implementation 'me.dinowernli:java-grpc-prometheus:0.3.0'
 
     runtime "org.apache.ignite:ignite-spring:${igniteVersion}"
     runtime "org.apache.ignite:ignite-kubernetes:${igniteVersion}"

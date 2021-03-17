@@ -8,10 +8,12 @@ import io.grpc.health.v1.HealthGrpc;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.services.HealthStatusManager;
+import io.opencensus.exporter.stats.prometheus.PrometheusStatsCollector;
 import org.apache.commons.cli.*;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.metric.opencensus.OpenCensusMetricExporterSpi;
 import org.apache.ignite.spi.tracing.opencensus.OpenCensusTracingSpi;
 
 import java.io.IOException;
@@ -28,7 +30,8 @@ public class Cmd {
         final String GRPC_KA_TIMEOUT_OPT = "gpt";
         final String GRPC_KA_MIN_TIME_OPT = "gpm";
         final String GRPC_KA_WO_STREAM_OPT = "gpa";
-        final String TRACE_OPT = "t";
+        final String TRACES_OPT = "t";
+        final String METRICS_OPT = "m";
         final String HELP_OPT = "h";
         final String VER_OPT = "v";
         final int DFLT_PORT = 2379;
@@ -95,11 +98,18 @@ public class Cmd {
                 "Allows clients to ping the server without any active streams (denied by default)."
             )
             .addOption(
-                TRACE_OPT,
-                "trace",
+                TRACES_OPT,
+                "traces",
                 false,
                 "Enable tracing. tracingSpi must be specified in the Ignite configuration file. OpenCensus tracing " +
                     "is used if no Ignite configuration file is specified"
+            )
+            .addOption(
+                METRICS_OPT,
+                "metrics",
+                false,
+                "Enable metrics. metricExporterSpi must be specified in the Ignite configuration file. OpenCensus " +
+                    "metrics with Prometheus stats collector is used if no Ignite configuration file is specified"
             )
             .addOption(HELP_OPT, "help", false, "Print usage")
             .addOption(VER_OPT, "version", false, "Print version");
@@ -116,11 +126,25 @@ public class Cmd {
         }
 
         int srvPort = cmd.hasOption(PORT_OPT) ? Integer.parseInt(cmd.getOptionValue(PORT_OPT)) : DFLT_PORT;
-        Ignite ignite = cmd.hasOption(IGNITE_CFG_OPT)
-            ? Ignition.start(cmd.getOptionValue(IGNITE_CFG_OPT))
-            : cmd.hasOption(TRACE_OPT)
-            ? Ignition.start(new IgniteConfiguration().setTracingSpi(new OpenCensusTracingSpi()))
-            : Ignition.start();
+        Ignite ignite;
+
+        if (cmd.hasOption(METRICS_OPT))
+            PrometheusStatsCollector.createAndRegister();
+
+        if (cmd.hasOption(IGNITE_CFG_OPT))
+            ignite = Ignition.start(cmd.getOptionValue(IGNITE_CFG_OPT));
+        else if (cmd.hasOption(TRACES_OPT) || cmd.hasOption(METRICS_OPT)) {
+            IgniteConfiguration cfg = new IgniteConfiguration();
+
+            if (cmd.hasOption(TRACES_OPT))
+                cfg.setTracingSpi(new OpenCensusTracingSpi());
+            if (cmd.hasOption(METRICS_OPT))
+                cfg.setMetricExporterSpi(new OpenCensusMetricExporterSpi());
+
+            ignite = Ignition.start(cfg);
+        } else
+            ignite = Ignition.start();
+
         String kvCacheName = cmd.hasOption(KV_CACHE_OPT) ? cmd.getOptionValue(KV_CACHE_OPT) : DFLT_KV_CACHE;
         String kvHistCacheName = cmd.hasOption(KV_HIST_CACHE_OPT)
             ? cmd.getOptionValue(KV_HIST_CACHE_OPT)

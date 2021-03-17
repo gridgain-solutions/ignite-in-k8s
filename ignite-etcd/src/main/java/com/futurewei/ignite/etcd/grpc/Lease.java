@@ -7,7 +7,7 @@ import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import org.apache.ignite.Ignite;
 
-public final class Lease extends LeaseGrpc.LeaseImplBase {
+public final class  Lease extends LeaseGrpc.LeaseImplBase {
     private final com.futurewei.ignite.etcd.Lease impl;
 
     public Lease(Ignite ignite, String cacheName, String kvCacheName, String histCacheName) {
