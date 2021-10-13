@@ -1,0 +1,49 @@
+# Add the path and environment variables below to the end of your Ubuntu .profile file (or to an alternate/preferred env file, such as .bashrc)
+# Ensure that the settings below (or equivalent) are activated on server start-up/log-in for each etcd/ignite-etcd node, both server and client nodes.
+# The only node that doesn't strictly need all of these settings is the benchmark server node itself (but its probably easier just to add them anyway).
+
+# These settings assume a 'dev' folder in the $HOME folder, under which the etcd, ignite-etcd, and Go-project installations will be placed.
+
+# Set Java Home and ignite optimized JVM settings (or equivalent/preferred JDK and JVM options)
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"
+
+# Set environment variables and PATHs for Go binaries and for Go projects
+export GOPATH=$HOME/dev/go           # GOPATH designates the folder in which Go projects will be placed (not the Go language binaries themselves)
+export PATH=$PATH:$GOPATH/bin        # Add to PATH -- the path to Go projects (such as the 'benchmark' project in this case)
+export PATH=$PATH:/usr/local/go/bin  # Add to PATH -- the path to the actual GoLang binaries
+
+# Set ignite HOME and update PATH
+export IGNITE_HOME=${HOME}/dev/ignite  # Set the HOME path to the standard OOTB Ignite installation (not the ignite-etcd installation), currently version 2.10.0.
+export PATH=$PATH:${IGNITE_HOME}/bin   # Add to Path -- the path to the standard OOTB Ignite installation.
+
+# Set ignite-etcd HOME and update PATH
+export IGNITE_ETCD_HOME=${HOME}/dev/igk8s/ignite-etcd/build/install/ignite-etcd  # Set the HOME path to the ignite-etcd installation
+export PATH=$PATH:${IGNITE_ETCD_HOME}/bin                                        # Add to Path -- the path to the ignite-etcd binaries
+export IGNITE_ETCD_CONFIG=${HOME}/dev/igk8s-config  # Set IGNITE_ETCD_CONFIG to folder containing the ignite-etcd configuration files for this project.
+
+# Set Internal (Static) Server IPs needed to perform the benchmark tests.
+# Note that etcd seemed to have problems if the server IPS below were DNS specifications, instead of internal IP numbers.
+# This was not fully validated and may have been caused by other configuration errors at the time of these tests.
+# In theory DNS names such as ig-etcd-1, ig-etcd-2, ig-etcd-n, etc. should work as well.
+export SERVER_1_IP=10.162.0.2   # etcd or ignite server 1 (ignite server can be an OOTB ignite or and ignite-etcd server)
+export SERVER_2_IP=10.162.0.3   # etcd or ignite server 2 (ignite server can be an OOTB ignite or and ignite-etcd server)
+export SERVER_3_IP=10.162.0.11  # etcd or ignite server 3 (ignite server can be an OOTB ignite or and ignite-etcd server)
+export SERVER_4_IP=10.162.0.9   # ignite-etcd shim (or client) server -- used only for ignite-etcd tests, not used for etcd tests.
+export SERVER_5_IP=10.162.0.10  # benchmark server -- executes all the benchmark tests (calling the etcd or ignite servers)
+
+# Set etcd configuration flags (common across all etcd nodes, using reserved etcd environment variables)
+export ETCDCTL_API=3   # This ensures API version 3.X is called (not 2.X) - probably not necessary, but doens't hurt.
+export ETCD_DATA_DIR=${HOME}/dev/etcd/data.etcd  # This places the etcd db on each node under the folder: $HOME/dev/etcd/data.etcd.
+
+# Uncomment the exports below to set these environment variables ONLY when starting up a new etcd cluster for the first time!
+# After the cluster is up and running (in this case, the first three etcd nodes above), comment out these settings (and run source .profile).
+# Documentation recommends to comment out these lines after the initial startup, but claims it doesn't hurt to leave them in.
+# Findings so far were that if you do not comment them out (after startup), problems with subsequent full restarts may occur.
+#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"
+#export ETCD_INITIAL_CLUSTER_STATE=new
+#export ETCD_INITIAL_CLUSTER_TOKEN=INITIALIZE_WITH_TOKEN_1 # ensure that this value is unique each time a new cluster is started from scratch.
+
+# Set etcd endpoints (for benchmark and client apps)
+export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379  # Set the server/ports for the benchmark program to use for etcd nodes.
+export IGNITE_ETCD_ENDPOINTS=${SERVER_4_IP}:2379  # Set the server/port(s) for the benchmark program to use for etcd-shim node(s).
