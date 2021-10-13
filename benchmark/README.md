@@ -33,7 +33,7 @@ $ source .profile
 
 To install Go on Ubuntu server/machine:
 --------------------------------------
-(besure to edit the Go version you want, e.g. 16.8 below)
+*Be sure to edit the Go version you want, e.g. 16.8 below*
 wget -c https://dl.google.com/go/go1.16.8.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
 
 add to ~/.profile:
