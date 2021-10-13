@@ -1,20 +1,22 @@
 # benchmark
-This benchmark branch contains the additional configuration files and instructions to run *published etcd benchmarks*
+This branch contains the additional configuration files and instructions necessary to run *published etcd benchmarks*
 on Ubuntu vms, for either standard etcd or custom ignite-etcd configurations.
 
-The folders/files herein are scripted for Unbuntu 20.0.4 and are organized into the folders assumed by the configuration scripts.
-However, this configuration can be easily changed for alternative Linux distros and/or other desired build configurations.
+The folders/files herein are scripted for Unbuntu 20.0.4 and are organized into the folders assumed by the current configuration scripts.
+However, these configuration files can be easily changed for alternative Linux distros and/or other desired build configurations.
 
-Once configured, the benchmarks can be run for only configuration at a time (either for etcd or for ignite-ectd).
+Once configured, the etcd benchmarks can be run for only configuration at a time (either for etcd or for ignite-ectd).
 
 The benchmark folders are:
 
-- [Home folder](benchmark/dev-guide.md): files to be added to Ubuntu $HOME directory (i.e. startup scripts for the etcd and ignite-etcd configurations).
-- [env folder](benchmark/design.md): contains one file named .profile-additions.  Add all the additions in this file to the end of your .profile or .bashrc file.
-- [dev folder](benchmark/design.md): top level folder in $HOME. ther benchmark folders, files, binaries, etc. will be added under this folder.
-- [ig-ik8s-config](ignite-etcd/README.md): contains itnite-etcd specific configuration files.
+- [Home folder](benchmark/dev-guide.md): startup files to be added to Ubuntu $HOME directory (i.e. startup scripts for the etcd and ignite-etcd configurations).
+- [env folder](benchmark/design.md): contains only one file named .profile-additions.  Add all the additions in this file to the end of your .profile or .bashrc file.
+- [dev folder](benchmark/design.md): top level folder under $HOME. All other benchmark folders, files, binaries, etc. will be added under this 'dev' folder.
+- [ig-ik8s-config](ignite-etcd/README.md): contains ignite-etcd specific configuration files.
 
-Below are detailed instructions for installing and building the benchmark applications and etcd/ignite-etcd servers.
+Below are the detailed instructions for installing and building the benchmark applications and etcd/ignite-etcd servers.
+**Please note** that these instructions incrementally add all the .profile extensions listed above in .profile-additions file.
+So you can copy all the .profile extensions at once, or build them step by step, and compare them at the end.
 
 To install Java 8 on Ubunutu server/machine:
 -------------------------------------------
