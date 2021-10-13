@@ -41,7 +41,9 @@ add to ~/.profile:
 export PATH=$PATH:/usr/local/go/bin
 
 optionally add to ~/.profile a path for Go projects such as:
+
 export GOPATH=$HOME/dev/go
+
 export PATH=$PATH:$GOPATH/bin
 
 $ source .profile
