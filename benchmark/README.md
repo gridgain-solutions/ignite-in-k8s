@@ -24,7 +24,7 @@ on Ubuntu vms, for either standard etcd or custom ignite-etcd configurations.
 The folders/files herein are scripted for Unbuntu 20.0.4 and are organized into the folders assumed by the current configuration scripts.
 However, these configuration files can be easily changed for alternative Linux distros and/or other desired build configurations.
 
-Once configured, the etcd benchmarks can be run for only configuration at a time (either for etcd or for ignite-ectd).
+Once fully configured, the etcd benchmarks can be run for only one configuration at a time (either for etcd or for ignite-ectd).
 
 The benchmark folders are:
 
