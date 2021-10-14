@@ -15,8 +15,12 @@ Each of the nodes should contain in $HOME:
  - *For the ignite client/shim node:* start-ignite-etcd-shim.sh
  - *For the benchmark node:* etcd-bm-write-all.sh and ignite-etcd-bm-write-all.sh
     
-(2) A 'dev' folder that should contain the following sub-folders:  
-    etcd  go  igk8s  igk8s-config  ignite 
+(2) A 'dev' folder that should contain the following sub-folders:
+- etcd
+- go
+- igk8s
+- igk8s-config
+- ignite 
     
 (3) The benchmark node (just for consistency) can have the same setup above, but much of it will not be used.  Instead, it will have one addition, the benchmark Go app. The benchmark installation instructions herein will install the benchmark app into GoPath and the app itself into $HOME/dev/go/bin.  It is runnable from any locaton on the server.
 
