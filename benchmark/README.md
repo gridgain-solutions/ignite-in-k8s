@@ -3,15 +3,15 @@
 
 The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
 
-The 3 server nodes and the 1 client node should contain in $HOME
-(1) At most two startup scripts from the repo home folder should be copied to the $HOME folder for each of the 3 server nodes and the 1 client node.
-    The startup scripts are:
-    For server node 1: start-etcd1.sh and start-ignite.sh
-    For server node 2: start-etcd2.sh and start-ignite.sh
-    For server node 3: start-etcd3.sh and start-ignite.sh
-    For the client/shim node: start-ignite-etcd-shim.sh
-(2) A 'dev' folder that should contain the following sub-folders:
-    etcd  go  igk8s  igk8s-config  ignite
+The 3 server nodes and the 1 client node should contain in $HOME:  
+(1) At most two startup scripts copied from the repo home folder to the $HOME folder (for each of the 3 server nodes and the 1 client node).  
+    The startup scripts are:  
+    For server node 1: start-etcd1.sh and start-ignite.sh  
+    For server node 2: start-etcd2.sh and start-ignite.sh  
+    For server node 3: start-etcd3.sh and start-ignite.sh  
+    For the client/shim node: start-ignite-etcd-shim.sh  
+(2) A 'dev' folder that should contain the following sub-folders:  
+    etcd  go  igk8s  igk8s-config  ignite  
 (3) The benchmark node should contain one benchmark folder under $HOME.
 
 Please contact me for help/questions until I can get this branch in a fully clonable state.
