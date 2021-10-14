@@ -9,11 +9,11 @@ The run-time difference between the etcd and ignite-etcd configuration is that t
 Each of the nodes should contain in $HOME:  
 (1) At most two startup (or benchmark) scripts copied from the repo/branch folder 'home' to the Unbuntu $HOME folder.  
     The startup/benchmark scripts are:  
-    For server node 1: start-etcd1.sh and start-ignite.sh  
-    For server node 2: start-etcd2.sh and start-ignite.sh  
-    For server node 3: start-etcd3.sh and start-ignite.sh  
-    For the client/shim node: start-ignite-etcd-shim.sh  
-    For the benchmark node: etcd-bm-write-all.sh and ignite-etcd-bm-write-all.sh
+ - *For server node 1:* start-etcd1.sh and start-ignite.sh
+ - *For server node 2:* start-etcd2.sh and start-ignite.sh
+ - *For server node 3:* start-etcd3.sh and start-ignite.sh 
+ - *For the ignite client/shim node:* start-ignite-etcd-shim.sh
+ - *For the benchmark node:* etcd-bm-write-all.sh and ignite-etcd-bm-write-all.sh
     
 (2) A 'dev' folder that should contain the following sub-folders:  
     etcd  go  igk8s  igk8s-config  ignite 
