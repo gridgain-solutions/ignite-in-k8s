@@ -14,7 +14,7 @@ The 3 server nodes and the 1 client node should contain in $HOME:
 (2) A 'dev' folder that should contain the following sub-folders:  
     etcd  go  igk8s  igk8s-config  ignite 
     
-(3) The benchmark node should contain one benchmark folder under $HOME.
+(3) The benchmark node (just for consistency) can have the same setup above, but much of it will not be used.  Instead, it will have one addition, the benchmark Go app. The benchmark installation instructions herein will install the benchmark app into GoPath and the app itself into $HOME/dev/go/bin.  It is runnable from any locaton on the server.
 
 Please contact me for help/questions until I can get this branch in a fully clonable state.
 
