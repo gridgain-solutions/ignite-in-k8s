@@ -9,9 +9,11 @@ The 3 server nodes and the 1 client node should contain in $HOME:
     For server node 1: start-etcd1.sh and start-ignite.sh  
     For server node 2: start-etcd2.sh and start-ignite.sh  
     For server node 3: start-etcd3.sh and start-ignite.sh  
-    For the client/shim node: start-ignite-etcd-shim.sh  
+    For the client/shim node: start-ignite-etcd-shim.sh 
+    
 (2) A 'dev' folder that should contain the following sub-folders:  
-    etcd  go  igk8s  igk8s-config  ignite  
+    etcd  go  igk8s  igk8s-config  ignite 
+    
 (3) The benchmark node should contain one benchmark folder under $HOME.
 
 Please contact me for help/questions until I can get this branch in a fully clonable state.
@@ -39,13 +41,13 @@ So you can copy all the .profile extensions at once, or build them step by step,
 
 To install Java 8 on Ubunutu server/machine:
 -------------------------------------------
-sudo apt update
-sudo apt install openjdk-8-jdk openjdk-8-jre
+sudo apt update  
+sudo apt install openjdk-8-jdk openjdk-8-jre  
 java -version
 
-add to ~/.profile:
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"
+add to ~/.profile:  
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64  
+export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"  
 
 $ source .profile
 
@@ -56,33 +58,31 @@ To install Go on Ubuntu server/machine:
 
 wget -c https://dl.google.com/go/go1.16.8.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
 
-add to ~/.profile:
+add to ~/.profile:  
 export PATH=$PATH:/usr/local/go/bin
 
-optionally add to ~/.profile a path for Go projects such as:
-
-export GOPATH=$HOME/dev/go
-
+optionally add to ~/.profile a path for Go projects such as:  
+export GOPATH=$HOME/dev/go  
 export PATH=$PATH:$GOPATH/bin
 
-$ source .profile
-$ go version
+$ source .profile  
+$ go version  
 
 To install etcd
 ----------------
-(1) Open in a browser the desired release link, e.g. for 3.5: https://github.com/etcd-io/etcd/releases/tag/v3.5.0
-(2) Copy the install script (displayed on the etcd webpage) directly into your ubuntu terminal session (maybe they will change that someday :) 
-(3) The copied script will download etcd into folder: /tmp/etcd-download-test
-(4) copy the three etcd binaries (etcd, etcdctl, etcdutl) to /usr/local/bin:
-    sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/
-    sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/
-    sudo cp /tmp/etcd-download-test/etcdutl /usr/local/bin/
-(5) verify with:  etcd -version
-      etcd Version: 3.5.0
-      Git SHA: 946a5a6f2
-      Go Version: go1.16.3
-      Go OS/Arch: linux/amd64
-(6) Move or delete the /tmp/ectcd-download-test folder (and its contents) as desired (or just leave it as is).  No other etcd files are not needed for this project.
+(1) Open in a browser the desired release link, e.g. for 3.5: https://github.com/etcd-io/etcd/releases/tag/v3.5.0  
+(2) Copy the install script (displayed on the etcd webpage) directly into your ubuntu terminal session (maybe they will change that someday :)  
+(3) The copied script will download etcd into folder: /tmp/etcd-download-test  
+(4) copy the three etcd binaries (etcd, etcdctl, etcdutl) to /usr/local/bin:  
+    sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/  
+    sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/  
+    sudo cp /tmp/etcd-download-test/etcdutl /usr/local/bin/  
+(5) verify with:  etcd -version  
+      etcd Version: 3.5.0  
+      Git SHA: 946a5a6f2  
+      Go Version: go1.16.3  
+      Go OS/Arch: linux/amd64  
+(6) Move or delete the /tmp/ectcd-download-test folder (and its contents) as desired (or just leave it as is).  No other etcd files are not needed for this project.  
 
 VERY IMPORTANT: FOR THE FIRST TIME YOU START UP A MULTI_NODE ETCD CLUSTER
 -------------------------------------------------------------------------
