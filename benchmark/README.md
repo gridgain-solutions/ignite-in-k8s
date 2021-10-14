@@ -107,7 +107,7 @@ etcd --name etcd1 --initial-advertise-peer-urls http://${SERVER_1_IP}:2380 \
 
 To install benchmark Go app:
 ----------------------------
-Note the /v3/ below -- make sure the /vX/ is the desired benchmark version)
+Note the /v3/ below -- make sure the /vX/ is the desired benchmark version.
 
 $ go get go.etcd.io/etcd/v3/tools/benchmark  
 $ benchmark --help
