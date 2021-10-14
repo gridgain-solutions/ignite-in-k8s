@@ -15,6 +15,7 @@ The 3 server nodes and the 1 client node should contain in $HOME
 (3) The benchmark node should contain one benchmark folder under $HOME.
 
 Please contact me for help/questions until I can get this branch in a fully clonable state.
+
 End Temporary Disclaimer.
 
 This branch contains the additional configuration files and instructions necessary to run *published etcd benchmarks*
