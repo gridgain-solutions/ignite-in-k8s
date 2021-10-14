@@ -46,7 +46,7 @@ sudo apt update
 sudo apt install openjdk-8-jdk openjdk-8-jre  
 java -version
 
-add to ~/.profile:  
+Add to ~/.profile:  
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64  
 export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"  
 
@@ -59,10 +59,10 @@ To install Go on Ubuntu server/machine:
 
 wget -c https://dl.google.com/go/go1.16.8.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
 
-add to ~/.profile:  
+Add to ~/.profile:  
 export PATH=$PATH:/usr/local/go/bin
 
-optionally add to ~/.profile a path for Go projects such as:  
+Add to ~/.profile the path for Go projects, such as:  
 export GOPATH=$HOME/dev/go  
 export PATH=$PATH:$GOPATH/bin
 
@@ -74,11 +74,11 @@ To install etcd
 (1) Open in a browser the desired release link, e.g. for 3.5: https://github.com/etcd-io/etcd/releases/tag/v3.5.0  
 (2) Copy the install script (displayed on the etcd webpage) directly into your ubuntu terminal session (maybe they will change that someday :)  
 (3) The copied script will download etcd into folder: /tmp/etcd-download-test  
-(4) copy the three etcd binaries (etcd, etcdctl, etcdutl) to /usr/local/bin:  
+(4) Copy the three etcd binaries (etcd, etcdctl, etcdutl) to /usr/local/bin:  
     sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/  
     sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/  
     sudo cp /tmp/etcd-download-test/etcdutl /usr/local/bin/  
-(5) verify with:  etcd -version  
+(5) Verify with:  etcd -version  
       etcd Version: 3.5.0  
       Git SHA: 946a5a6f2  
       Go Version: go1.16.3  
@@ -123,10 +123,11 @@ To install ignite v2.10.0 (binaries only)
 cd $HOME/dev  
 wget https://archive.apache.org/dist/ignite/2.10.0/apache-ignite-2.10.0-bin.zip
 
-If necessary (install unzip)  
+If necessary (install unzip):  
 sudo apt-get install unzip  
 unzip apache-ignite-2.10.0-bin.zip  
 
+Rename ignite folder and delete zip file:  
 mv apache-ignite-2.10.0-bin ignite  (simplify name to ignite)  
 rm apache-ignite-2.10.0-bin.zip (delete the .zip file if you want to).  
 
@@ -138,7 +139,6 @@ To install and build ignite-in-k8s
     This project generates a really long path, that can exceed limits on Windows, but is probably not a problem on Linux.  
 (4) cd igk8s/ignite-etcd  
 (5) ./gradlew installDist (to build the project)  
-
 
 Setting up ETCD Endpoints (to use in etcdcl and benchmark commands)
 -------------------------------------------------------------------
