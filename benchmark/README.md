@@ -9,7 +9,7 @@ Each of the nodes should contain in $HOME:
     For server node 1: start-etcd1.sh and start-ignite.sh  
     For server node 2: start-etcd2.sh and start-ignite.sh  
     For server node 3: start-etcd3.sh and start-ignite.sh  
-    For the client/shim node: start-ignite-etcd-shim.sh
+    For the client/shim node: start-ignite-etcd-shim.sh  
     For the benchmark node: etcd-bm-write-all.sh and ignite-etcd-bm-write-all.sh
     
 (2) A 'dev' folder that should contain the following sub-folders:  
