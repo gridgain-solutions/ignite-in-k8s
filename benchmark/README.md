@@ -55,7 +55,7 @@ $ source .profile
 
 To install Go on Ubuntu server/machine:
 --------------------------------------
-*Be sure to edit the Go version you want, e.g. 16.8 below*
+*Be sure to specify the Go version you want, e.g. 16.8 below, and please note the etcd installations do not yet work for Go 17.X*
 
 wget -c https://dl.google.com/go/go1.16.8.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
 
