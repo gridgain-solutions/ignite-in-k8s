@@ -153,7 +153,7 @@ Then in etcdctl commands, add the --endpoints=$ETCD_ENDPOINTS  (or IGNITE_ETCD_E
 
 For the benchmark program, omit the '=', so add --endpoints $ETCD_ENDPOINTS  to the benchmark command.
 
-**Examples:**
+**Examples:**  
 etcdctl --endpoints=$ETCD_ENDPOINTS put foo bar  
 etcdctl --endpoints=$IGNITE_ETCD_ENDPOINTS put foo bar  
 
