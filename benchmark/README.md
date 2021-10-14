@@ -96,8 +96,10 @@ Starting etcd clusters is generally very easy (per on-line documentation).  But 
 #export ETCD_INITIAL_CLUSTER_STATE=new  
 #export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
 
-Then to start an etcd cluster using the command below on each etcd server (in a script or terminal session):  
-(The --name parameter is optional.  See the full .profile example below to see how the INITIIAL CLUSTER and SERVER_IP variables are set and automatically added)  
+Then to start an etcd cluster, run a etcd start command (like the one below) for each etcd server node (in a script or terminal session):  
+The --name parameter is important and must be the same as in the .profile env variables.  
+See the full **Example .profile** below to see how the INITIIAL CLUSTER and SERVER_IP variables should be set). 
+
 etcd --name etcd1 --initial-advertise-peer-urls http://${SERVER_1_IP}:2380 \  
   --listen-peer-urls http://${SERVER_1_IP}:2380 \  
   --listen-client-urls http://${SERVER_1_IP}:2379,http://127.0.0.1:2379 \  
