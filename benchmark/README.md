@@ -154,42 +154,42 @@ With the two environments variables, you should be able to run all etcdctl or be
 # Example .profile 
 Below is an example of the env variables and settings added to the ubuntu .profile file (for the tests ran in GCE):
 
-/# Set Java Home and ignite optimized JVM settings
+\# Set Java Home and ignite optimized JVM settings
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"
 
-/# Set GO environment variables and update PATH
+\# Set GO environment variables and update PATH
 export GOPATH=$HOME/dev/go
 export PATH=$PATH:$GOPATH/bin
 export PATH=$PATH:/usr/local/go/bin
 
-/# Set ignite HOME and update PATH
+\# Set ignite HOME and update PATH
 export IGNITE_HOME=${HOME}/dev/ignite
 export PATH=$PATH:${IGNITE_HOME}/bin
 
-/# Set ignite-etcd HOME and update PATH
+\# Set ignite-etcd HOME and update PATH
 export IGNITE_ETCD_CONFIG=${HOME}/dev/igk8s-configs
 export IGNITE_ETCD_HOME=${HOME}/dev/igk8s/ignite-etcd/build/install/ignite-etcd
 export PATH=$PATH:${IGNITE_ETCD_HOME}/bin
 
-/# Set Internal (Static) Server IPs
+\# Set Internal (Static) Server IPs
 export SERVER_1_IP=10.162.0.2
 export SERVER_2_IP=10.162.0.3
 export SERVER_3_IP=10.162.0.11
 export SERVER_4_IP=10.162.0.9
 export SERVER_5_IP=10.162.0.10
 
-/# Set etcd configuration flags (common across all etcd nodes) using reserved etcd environment variables
+\# Set etcd configuration flags (common across all etcd nodes) using reserved etcd environment variables
 export ETCDCTL_API=3
 export ETCD_DATA_DIR=${HOME}/dev/etcd/data.etcd
 
-/# Set these only when starting up a new etcd cluster for the first time!
-/# After the cluster is up and running, comment out these settings (and run source .profile)
-#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"
-#export ETCD_INITIAL_CLUSTER_STATE=new
-#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.
+\# Set these only when starting up a new etcd cluster for the first time!
+\# After the cluster is up and running, comment out these settings (and run source .profile)
+\#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"
+\#export ETCD_INITIAL_CLUSTER_STATE=new
+\#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.
 
-/# Set etcd endpoints (for benchmark and client apps)
+\# Set etcd endpoints (for benchmark and client apps)
 export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379
 export IGNITE_ETCD_ENDPOINTS=${SERVER_4_IP}:2379
 
