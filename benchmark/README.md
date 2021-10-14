@@ -83,7 +83,7 @@ To install etcd
       Git SHA: 946a5a6f2  
       Go Version: go1.16.3  
       Go OS/Arch: linux/amd64  
-(6) Move or delete the /tmp/ectcd-download-test folder (and its contents) as desired (or just leave it as is).  No other etcd files are not needed for this project.  
+(6) For convenience, rename the 'etcd-download-test' folder to 'etcd' and move it to the $HOME/dev folder.  Alternatively, just leave it as is, or delete it, as it will not be used further in this project (since the three etcd binaries were copied to /usr/local/bin in step 3 above).
 
 VERY IMPORTANT: FOR THE FIRST TIME YOU START UP A MULTI_NODE ETCD CLUSTER
 -------------------------------------------------------------------------
