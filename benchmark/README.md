@@ -28,7 +28,7 @@ Once fully configured, the etcd benchmarks can be run for only one configuration
 
 The benchmark folders are:
 
-- [Home folder](benchmark/dev-guide.md): startup files to be added to Ubuntu $HOME directory (i.e. startup scripts for the etcd and ignite-etcd configurations).
+- [home folder](benchmark/dev-guide.md): startup files to be added to Ubuntu $HOME directory (i.e. startup scripts for the etcd and ignite-etcd configurations).
 - [env folder](benchmark/design.md): contains only one file named .profile-additions.  Add all the additions in this file to the end of your .profile or .bashrc file.
 - [dev folder](benchmark/design.md): top level folder under $HOME. All other benchmark folders, files, binaries, etc. will be added under this 'dev' folder.
 - [ig-ik8s-config](ignite-etcd/README.md): contains ignite-etcd specific configuration files.
