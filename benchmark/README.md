@@ -166,7 +166,7 @@ benchmark --endpoints=$IGNITE_ETCD_ENDPOINTS --conns=100 --clients=1000 put --ke
 With the two environments variables, you should be able to run all etcdctl or benchmark commands for either etcd or ignite-etcd.  But of course you can only have one test configuration active at a time (if you are using the same machines).  As both etcd and ignite_etcd have to listen on the same port 2379.
 
 # Example .profile 
-Below is an example of the env variables and settings added to the ubuntu .profile file (for the tests ran in GCE):
+Below is an example of all of the env variable settings that should be added to the Ubuntu .profile file (for this benchmark branch project):
 
 \# Set Java Home and ignite optimized JVM settings  
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64  
