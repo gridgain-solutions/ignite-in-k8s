@@ -1,5 +1,5 @@
 # benchmark
-*Temporary Disclaimer:*  This branch is complete in content, but is not yet in a clonable state.  The instructions herein are not yet fully accurate, and perhaps should be converted into a Docker container version.
+*Temporary Disclaimer:*  This branch is complete in content, and the instructions herein are accurate, but this not branch is not yet in a clonable state, because it contains mostly instructions, scripts, and config files for a multi-node architecture. If futher developed, it should be converted into a Docker containers or some other more suitable state for multi-node deployment.
 
 The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
 
