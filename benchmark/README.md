@@ -2,7 +2,7 @@
 *Temporary Disclaimer:*  This branch is complete in content and the instructions herein should be accurate, but this branch is not yet in a clonable state, because it contains mostly instructions, scripts, and config files for a multi-node etcd/ignite architecture. If futher developed, it should be converted into a Docker containers or some other more suitable state for multi-node deployment.
 
 The intended result is 5 servers: 3 server nodes, 1 client node (used only in the ignite-etcd configuration), and 1 benchmark node.  
-The run-time difference between the etcd and ignite-etcd configurations is that the benchmark node/app queries the 3 server-nodes:    
+The run-time difference between the etcd and ignite-etcd configuration is that the benchmark app/node queries the 3 server-nodes:    
 - directly (for the standard etcd configuration) and the igntite-etcd client/shim node is not used.  
 - indirectly (via the ignite-etcd client/node) for the ignite-etcd configuration.  
 
