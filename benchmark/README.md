@@ -149,8 +149,19 @@ For etcd -- this will be a list of (n) etcd servers.  For ignite-etcd, it may be
 export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379  
 export IGNITE_ETCD_ENDPOINTS=${SERVER_4_IP}:2379
 
-Then in etcdctl commands, add the --endpoints=$ETCD_ENDPOINTS  (or IGNITE_ETCD_ENDPOINTS) to the etcdctl command you want to invoke.  (note the = sign).  
+Then in etcdctl commands, add the --endpoints=$ETCD_ENDPOINTS  (or IGNITE_ETCD_ENDPOINTS) to the etcdctl command you want to invoke (note the = sign).  
+
 For the benchmark program, omit the '=', so add --endpoints $ETCD_ENDPOINTS  to the benchmark command.
+
+**Examples:**
+etcdctl --endpoints=$ETCD_ENDPOINTS put foo bar  
+etcdctl --endpoints=$IGNITE_ETCD_ENDPOINTS put foo bar  
+
+benchmark endpoints $ETCD_ENDPOINTS put  
+benchmark endpoints $IGNITE_ETCD_ENDPOINTS put  
+
+benchmark --endpoints=$ETCD_ENDPOINTS --conns=100 --clients=1000 put --key-size=8 --sequential-keys --total=100000 --val-size=256
+benchmark --endpoints=$IGNITE_ETCD_ENDPOINTS --conns=100 --clients=1000 put --key-size=8 --sequential-keys --total=100000 --val-size=256
 
 With the two environments variables, you should be able to run all etcdctl or benchmark commands for either etcd or ignite-etcd.  But of course you can only have one test configuration active at a time (if you are using the same machines).  As both etcd and ignite_etcd have to listen on the same port 2379.
 
