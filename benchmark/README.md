@@ -88,8 +88,8 @@ To install etcd
 VERY IMPORTANT: FOR THE FIRST TIME YOU START UP A MULTI_NODE ETCD CLUSTER
 -------------------------------------------------------------------------
 Starting etcd clusters is generally very easy (per on-line documentation).  But restarting, resetting, clearing etcd clusters, once started can be very confusing until some basics are understood.  
-(1) Every time you start a "NEW" cluster (not restart an already existing cluster), you must provide a new unqiue token ID (see the .profile example below).  
-(2) If you want to start over with a new cluster, you should delete the etcd db directory (called default.etcd unless you rename it) on all servers, AND change the new cluster token ID (in the .profile example below) -- this is very important or very strange things start to happen.  
+(1) Every time you start a "NEW" cluster (not restart an already existing cluster), you must provide a new unqiue token ID (see the .profile export examples in step 4 below).  
+(2) If you want to start over with a new cluster, you should delete the etcd db directory (called default.etcd unless you rename it) on all servers, AND change the new cluster token ID (in the .profile export example in step 4 below) -- this is very important or very strange things start to happen.  
 (3) There are probably better ways to do this, but they require a good deal more understanding of etcd (refer to the documentation if you need this understanding).  
 (4) Basically, understand and set these environment variables (any time you start a new cluster), and uncomment them after the cluster is fully up (yes, wierd).  
 #export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
