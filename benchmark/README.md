@@ -95,9 +95,9 @@ Starting etcd clusters is generally very easy (per on-line documentation).  But 
 (2) If you want to start over with a new cluster, you should delete the etcd db directory (called default.etcd unless you rename it) on all servers, AND change the new cluster token ID (in the .profile export example in step 4 below) -- this is very important or very strange things start to happen.  
 (3) There are probably better ways to do this, but they require a good deal more understanding of etcd (refer to the documentation if you need this understanding).  
 (4) Basically, understand and set these environment variables (any time you start a new cluster), and uncomment them after the cluster is fully up (yes, wierd).  
-#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
-#export ETCD_INITIAL_CLUSTER_STATE=new  
-#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
+export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
+export ETCD_INITIAL_CLUSTER_STATE=new  
+export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
 
 Then to start an etcd cluster, run a etcd start command (like the one below) for each etcd server node (in a script or terminal session):  
 The --name parameter is important and must be the same as in the .profile env variables.  
@@ -202,9 +202,9 @@ export ETCD_DATA_DIR=${HOME}/dev/etcd/data.etcd
 
 \# Set these only when starting up a new etcd cluster for the first time!  
 \# After the cluster is up and running, comment out these settings (and run source .profile)  
-\#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
-\#export ETCD_INITIAL_CLUSTER_STATE=new  
-\#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
+export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
+export ETCD_INITIAL_CLUSTER_STATE=new  
+export ETCD_INITIAL_CLUSTER_TOKEN=INITIAL_TOKEN_1 # <-- change/ensure that this value is unique/different each time a new cluster is started.  
 
 \# Set etcd endpoints (for benchmark and client apps)  
 export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379  
