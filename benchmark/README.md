@@ -190,11 +190,11 @@ export IGNITE_ETCD_HOME=${HOME}/dev/igk8s/ignite-etcd/build/install/ignite-etcd
 export PATH=$PATH:${IGNITE_ETCD_HOME}/bin  
 
 \# Set Internal (Static) Server IPs  
-export SERVER_1_IP=10.162.0.2  
-export SERVER_2_IP=10.162.0.3  
-export SERVER_3_IP=10.162.0.11  
-export SERVER_4_IP=10.162.0.9  
-export SERVER_5_IP=10.162.0.10  
+export SERVER_1_IP=10.162.0.1  
+export SERVER_2_IP=10.162.0.2  
+export SERVER_3_IP=10.162.0.3  
+export SERVER_4_IP=10.162.0.4  
+export SERVER_5_IP=10.162.0.5  
 
 \# Set etcd configuration flags (common across all etcd nodes) using reserved etcd environment variables  
 export ETCDCTL_API=3  
