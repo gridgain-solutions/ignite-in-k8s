@@ -1,5 +1,7 @@
 # benchmark
-Temporary Disclaimer:  This branch is complete in content, but is not yet in a clonable state.  The instructions herein are not yet fully accurate, and perhaps should be converted into a Docker container version.  The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
+Temporary Disclaimer:  This branch is complete in content, but is not yet in a clonable state.  The instructions herein are not yet fully accurate, and perhaps should be converted into a Docker container version.  Plus the current rendered display is eating line feeds?
+
+The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
 
 The 3 server nodes and the 1 client node should contain in $HOME
 (1) At most two startup scripts from the env folder should be copied to the $HOME folder for each of the 3 server nodes and the 1 client node.
