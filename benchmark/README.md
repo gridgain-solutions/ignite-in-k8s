@@ -1,5 +1,5 @@
 # benchmark
-Temporary Disclaimer:  This branch is complete in content, but is not yet in a clonable state.  The instructions herein are not yet fully accurate, and perhaps should be converted into a Docker container version.  Plus the current rendered display is eating line feeds?
+*Temporary Disclaimer:*  This branch is complete in content, but is not yet in a clonable state.  The instructions herein are not yet fully accurate, and perhaps should be converted into a Docker container version.  Plus the current rendered display is eating line feeds?
 
 The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
 
@@ -16,7 +16,7 @@ The 3 server nodes and the 1 client node should contain in $HOME
 
 Please contact me for help/questions until I can get this branch in a fully clonable state.
 
-End Temporary Disclaimer.
+*End Temporary Disclaimer.*
 
 This branch contains the additional configuration files and instructions necessary to run *published etcd benchmarks*
 on Ubuntu vms, for either standard etcd or custom ignite-etcd configurations.
