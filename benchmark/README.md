@@ -4,7 +4,7 @@
 The intended result is 5 servers: 3 server nodes, 1 client node (used only in the ignite-etcd configuration), and 1 benchmark node.  
 The run-time difference between the etcd and ignite-etcd configuration is that the benchmark app/node queries the 3 server-nodes:
 - directly (for the standard etcd configuration) and the igntite-etcd client/shim node is not used.  
-- indirectly (via the ignite-etcd client/node) for the ignite-etcd configuration.  
+- indirectly (via the ignite-etcd client/shim node) for the ignite-etcd configuration.  
 
 Each of the nodes should contain in $HOME:  
 (1) At most two startup (or benchmark) scripts copied from the repo/branch folder 'home' to the Unbuntu $HOME folder.  
