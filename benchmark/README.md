@@ -4,7 +4,7 @@
 The intended result is 5 servers: 3 server nodes, 1 client/shim node, and 1 benchmark node.
 
 The 3 server nodes and the 1 client node should contain in $HOME
-(1) At most two startup scripts from the env folder should be copied to the $HOME folder for each of the 3 server nodes and the 1 client node.
+(1) At most two startup scripts from the repo home folder should be copied to the $HOME folder for each of the 3 server nodes and the 1 client node.
     The startup scripts are:
     For server node 1: start-etcd1.sh and start-ignite.sh
     For server node 2: start-etcd2.sh and start-ignite.sh
