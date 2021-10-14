@@ -86,55 +86,54 @@ To install etcd
 
 VERY IMPORTANT: FOR THE FIRST TIME YOU START UP A MULTI_NODE ETCD CLUSTER
 -------------------------------------------------------------------------
-Starting etcd clusters is generally very easy (per on-line documentation).  But restarting, resetting, clearing etcd clusters, once started can be very confusing until some basics are understood.
-(1) Every time you start a "NEW" cluster (not restart an already existing cluster), you must provide a new unqiue token ID (see the .profile example below).
-(2) If you want to start over with a new cluster, you should delete the etcd db directory (called default.etcd unless you rename it) on all servers, AND change the new cluster token ID (in the .profile example below) -- this is very important or very strange things start to happen.
-(3) There are probably better ways to do this, but they require a good deal more understanding of etcd (refer to the documentation if you need this understanding).
-(4) Basically, understand and set these environment variables (any time you start a new cluster), and uncomment them after the cluster is fully up (yes, wierd).
-#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"
-#export ETCD_INITIAL_CLUSTER_STATE=new
-#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.
+Starting etcd clusters is generally very easy (per on-line documentation).  But restarting, resetting, clearing etcd clusters, once started can be very confusing until some basics are understood.  
+(1) Every time you start a "NEW" cluster (not restart an already existing cluster), you must provide a new unqiue token ID (see the .profile example below).  
+(2) If you want to start over with a new cluster, you should delete the etcd db directory (called default.etcd unless you rename it) on all servers, AND change the new cluster token ID (in the .profile example below) -- this is very important or very strange things start to happen.  
+(3) There are probably better ways to do this, but they require a good deal more understanding of etcd (refer to the documentation if you need this understanding).  
+(4) Basically, understand and set these environment variables (any time you start a new cluster), and uncomment them after the cluster is fully up (yes, wierd).  
+#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
+#export ETCD_INITIAL_CLUSTER_STATE=new  
+#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
 
-Then to start an etcd cluster using the command below on each etcd server (in a script or terminal session):
-(The --name parameter is optional.  See the full .profile example below to see how the INITIIAL CLUSTER and SERVER_IP variables are set and automatically added)
-etcd --name etcd1 --initial-advertise-peer-urls http://${SERVER_1_IP}:2380 \
-  --listen-peer-urls http://${SERVER_1_IP}:2380 \
-  --listen-client-urls http://${SERVER_1_IP}:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://${SERVER_1_IP}:2379 \
-
+Then to start an etcd cluster using the command below on each etcd server (in a script or terminal session):  
+(The --name parameter is optional.  See the full .profile example below to see how the INITIIAL CLUSTER and SERVER_IP variables are set and automatically added)  
+etcd --name etcd1 --initial-advertise-peer-urls http://${SERVER_1_IP}:2380 \  
+  --listen-peer-urls http://${SERVER_1_IP}:2380 \  
+  --listen-client-urls http://${SERVER_1_IP}:2379,http://127.0.0.1:2379 \  
+  --advertise-client-urls http://${SERVER_1_IP}:2379
 
 To install benchmark: (note the /v3/ below -- make sure the benchmark is for your desired version)
 --------------------------------------------------------------------------------------------------
 
-$ go get go.etcd.io/etcd/v3/tools/benchmark
+$ go get go.etcd.io/etcd/v3/tools/benchmark  
 $ benchmark --help
 
 For the ignite-etc installs, create a home directory, such as dev:
 ------------------------------------------------------------------
-cd $HOME
+cd $HOME  
 mkdir dev
 
 
 To install ignite v2.10.0 (binaries only)
 -----------------------------------------
-cd $HOME/dev
+cd $HOME/dev  
 wget https://archive.apache.org/dist/ignite/2.10.0/apache-ignite-2.10.0-bin.zip
 
-If necessary (install unzip)
-sudo apt-get install unzip
-unzip apache-ignite-2.10.0-bin.zip
+If necessary (install unzip)  
+sudo apt-get install unzip  
+unzip apache-ignite-2.10.0-bin.zip  
 
-mv apache-ignite-2.10.0-bin ignite  (simplify name to ignite)
-rm apache-ignite-2.10.0-bin.zip (delete the .zip file if you want to).
+mv apache-ignite-2.10.0-bin ignite  (simplify name to ignite)  
+rm apache-ignite-2.10.0-bin.zip (delete the .zip file if you want to).  
 
 To install and build ignite-in-k8s
 -----------------------------------
-(1) Make sure you are in the 'dev' directory (or the installation folder of choice)
-(2) $ git clone https://github.com/gridgain-solutions/ignite-in-k8s.git
-(3) optionally rename folder to shorter name like: igk8s
-    This project generates a really long path, that can exceed limits on Windows, but is probably not a problem on Linux.
-(4) cd igk8s/ignite-etcd
-(5) ./gradlew installDist (to build the project)
+(1) Make sure you are in the 'dev' directory (or the installation folder of choice)  
+(2) $ git clone https://github.com/gridgain-solutions/ignite-in-k8s.git  
+(3) optionally rename folder to shorter name like: igk8s  
+    This project generates a really long path, that can exceed limits on Windows, but is probably not a problem on Linux.  
+(4) cd igk8s/ignite-etcd  
+(5) ./gradlew installDist (to build the project)  
 
 
 Setting up ETCD Endpoints (to use in etcdcl and benchmark commands)
@@ -143,10 +142,10 @@ All etcdctl and benchmark commands are issused to the same listening port (2379)
 For etcd -- this will be a list of (n) etcd servers.  For ignite-etcd, it may be a single etcd-shim server.  See examples below:
 
 # Set etcd endpoints (for benchmark and client apps)
-export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379
+export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379  
 export IGNITE_ETCD_ENDPOINTS=${SERVER_4_IP}:2379
 
-Then in etcdctl commands, add the --endpoints=$ETCD_ENDPOINTS  (or IGNITE_ETCD_ENDPOINTS) to the etcdctl command you want to invoke.  (note the = sign).
+Then in etcdctl commands, add the --endpoints=$ETCD_ENDPOINTS  (or IGNITE_ETCD_ENDPOINTS) to the etcdctl command you want to invoke.  (note the = sign).  
 For the benchmark program, omit the '=', so add --endpoints $ETCD_ENDPOINTS  to the benchmark command.
 
 With the two environments variables, you should be able to run all etcdctl or benchmark commands for either etcd or ignite-etcd.  But of course you can only have one test configuration active at a time (if you are using the same machines).  As both etcd and ignite_etcd have to listen on the same port 2379.
@@ -154,46 +153,41 @@ With the two environments variables, you should be able to run all etcdctl or be
 # Example .profile 
 Below is an example of the env variables and settings added to the ubuntu .profile file (for the tests ran in GCE):
 
-\# Set Java Home and ignite optimized JVM settings
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"
+\# Set Java Home and ignite optimized JVM settings  
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64  
+export JVM_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g -XX:+UseG1GC -XX:+DisableExplicitGC -Djava.net.preferIPv4Stack=true -XX:MaxMetaspaceSize=1g"  
 
-\# Set GO environment variables and update PATH
-export GOPATH=$HOME/dev/go
-export PATH=$PATH:$GOPATH/bin
-export PATH=$PATH:/usr/local/go/bin
+\# Set GO environment variables and update PATH  
+export GOPATH=$HOME/dev/go  
+export PATH=$PATH:$GOPATH/bin  
+export PATH=$PATH:/usr/local/go/bin  
 
-\# Set ignite HOME and update PATH
-export IGNITE_HOME=${HOME}/dev/ignite
-export PATH=$PATH:${IGNITE_HOME}/bin
+\# Set ignite HOME and update PATH  
+export IGNITE_HOME=${HOME}/dev/ignite  
+export PATH=$PATH:${IGNITE_HOME}/bin  
 
-\# Set ignite-etcd HOME and update PATH
-export IGNITE_ETCD_CONFIG=${HOME}/dev/igk8s-configs
-export IGNITE_ETCD_HOME=${HOME}/dev/igk8s/ignite-etcd/build/install/ignite-etcd
-export PATH=$PATH:${IGNITE_ETCD_HOME}/bin
+\# Set ignite-etcd HOME and update PATH  
+export IGNITE_ETCD_CONFIG=${HOME}/dev/igk8s-configs  
+export IGNITE_ETCD_HOME=${HOME}/dev/igk8s/ignite-etcd/build/install/ignite-etcd  
+export PATH=$PATH:${IGNITE_ETCD_HOME}/bin  
 
-\# Set Internal (Static) Server IPs
-export SERVER_1_IP=10.162.0.2
-export SERVER_2_IP=10.162.0.3
-export SERVER_3_IP=10.162.0.11
-export SERVER_4_IP=10.162.0.9
-export SERVER_5_IP=10.162.0.10
+\# Set Internal (Static) Server IPs  
+export SERVER_1_IP=10.162.0.2  
+export SERVER_2_IP=10.162.0.3  
+export SERVER_3_IP=10.162.0.11  
+export SERVER_4_IP=10.162.0.9  
+export SERVER_5_IP=10.162.0.10  
 
-\# Set etcd configuration flags (common across all etcd nodes) using reserved etcd environment variables
-export ETCDCTL_API=3
+\# Set etcd configuration flags (common across all etcd nodes) using reserved etcd environment variables  
+export ETCDCTL_API=3  
 export ETCD_DATA_DIR=${HOME}/dev/etcd/data.etcd
 
-\# Set these only when starting up a new etcd cluster for the first time!
-\# After the cluster is up and running, comment out these settings (and run source .profile)
-\#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"
-\#export ETCD_INITIAL_CLUSTER_STATE=new
-\#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.
+\# Set these only when starting up a new etcd cluster for the first time!  
+\# After the cluster is up and running, comment out these settings (and run source .profile)  
+\#export ETCD_INITIAL_CLUSTER="etcd1=http://${SERVER_1_IP}:2380,etcd2=http://${SERVER_2_IP}:2380,etcd3=http://${SERVER_3_IP}:2380"  
+\#export ETCD_INITIAL_CLUSTER_STATE=new  
+\#export ETCD_INITIAL_CLUSTER_TOKEN=??? # <-- change/ensure that this value is unique/different each time a new cluster is started.  
 
-\# Set etcd endpoints (for benchmark and client apps)
-export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379
+\# Set etcd endpoints (for benchmark and client apps)  
+export ETCD_ENDPOINTS=${SERVER_1_IP}:2379,${SERVER_2_IP}:2379,${SERVER_3_IP}:2379  
 export IGNITE_ETCD_ENDPOINTS=${SERVER_4_IP}:2379
-
-
-
-
- 
