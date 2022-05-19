@@ -1,2 +1,3 @@
-/.gradle/
-/ignite/
+.gradle
+ignite
+build
